@@ -1,0 +1,26 @@
+Nội dung app:
+- setup express server kết nối mongodb
+
+Set up server app: 
+- Cài nodemon: npm i express --save-dev
+
+- Tạo file package.json: npm init
+
+- Tạo file .gitignore có nội dung: node_modules/
+
+- Cài nodemon: npm i nodemon --save-dev 
+// -dev là do ta chỉ dùng nodemon trong lúc dựng app,
+ giai đoạn production/ deploy thì không cần
+
+- Set up khởi chạy ("scripts"-package.json): "start": "nodemon server.js",
+ 
+- thêm file launch.json: RUN => add configuration => NodeJS
+
+- Set up script launch.json auto restart debugger khi save file:
+"program": "${workspaceFolder}\\server.js",
+// setup restart debugger khi sửa đổ code trong lúc debug
+"restart": true,
+"runtimeExecutable": "nodemon",
+// setup restart nodemon khi sửa đổ code trong lúc debug
+"console": "integratedTerminal"
+
