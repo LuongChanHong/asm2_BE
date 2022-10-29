@@ -22,7 +22,7 @@ const userSchema = new Schema({
     require: true,
   },
   phoneNumber: {
-    type: Number,
+    type: String,
     require: true,
   },
   email: {
