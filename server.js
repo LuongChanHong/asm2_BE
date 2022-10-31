@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 
 const server = express();
+const userRoutes = require("./routes/user");
 
 server.use(cors());
 server.use(express.json());
@@ -10,6 +11,8 @@ server.use(express.json());
 server.get("/test", (request, response, next) => {
   response.write("<h1>SERVER RUN</h1>");
 });
+
+server.use(userRoutes.route);
 
 mongoose
   .connect(
