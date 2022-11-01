@@ -1,5 +1,5 @@
 Nội dung app:
-- dựng màn hình đăng nhập
+- dựng màn hình đăng ký
 
 
 
