@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 
 const server = express();
 const userRoutes = require("./routes/user");
+const hotelRoutes = require("./routes/hotel");
 
 server.use(cors());
 server.use(express.json());
@@ -13,6 +14,7 @@ server.get("/test", (request, response, next) => {
 });
 
 server.use(userRoutes.route);
+server.use(hotelRoutes.route);
 
 mongoose
   .connect(
