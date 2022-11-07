@@ -33,6 +33,10 @@ const userSchema = new Schema({
     type: Boolean,
     require: true,
   },
+  // currentRoom: {
+  //   type: Schema.Types.ObjectId,
+  //   require: true,
+  // },
   // array chứa các instance transaction
   transactions: {
     type: Array,

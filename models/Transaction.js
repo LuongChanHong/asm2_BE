@@ -19,7 +19,7 @@ const transactionSchema = new Schema({
     type: Schema.Types.ObjectId,
     require: true,
   },
-  room: {
+  rooms: {
     type: Array,
     require: true,
   },
@@ -36,11 +36,11 @@ const transactionSchema = new Schema({
     require: true,
   },
   payment: {
-    type: Option,
+    type: String,
     require: true,
   },
   status: {
-    type: Option,
+    type: String,
     require: true,
   },
 });

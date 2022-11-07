@@ -1,0 +1,66 @@
+[
+  {
+    "user": {
+      "_id": {
+        "$oid": "635ce8cbcd0b0ecc366df32a"
+      },
+      "username": "admin",
+      "password": "123",
+      "fullName": "booking app admin",
+      "phoneNumber": "0801234567",
+      "email": "admin@mail.com",
+      "isAdmin": true
+    },
+    "hotel": {
+      "$oid": "6311bd07f2fce6ea18172fa3"
+    },
+    "rooms": [
+      {
+        "_id": {
+          "$oid": "6311be30f2fce6ea18172fa8"
+        },
+        "roomNumbers": 101
+      },
+      {
+        "_id": {
+          "$oid": "6311be30f2fce6ea18172fa8"
+        },
+        "roomNumbers": 102
+      }
+    ],
+    "dateStart": "2022-11-04T17:00:00.000Z",
+    "dateEnd": "2022-11-05T17:00:00.000Z",
+    "price": 600,
+    "payment": "Credit Card",
+    "status": "Checkin"
+  },
+  {
+    "user": {
+      "_id": {
+        "$oid": "635f582dd52649c03cbb41ab"
+      },
+      "username": "user1",
+      "password": "456",
+      "fullName": "booking app new user",
+      "phoneNumber": "0801231234",
+      "email": "user1@mail.com",
+      "isAdmin": false
+    },
+    "hotel": {
+      "$oid": "6311bf37f2fce6ea18172fb6"
+    },
+    "rooms": [
+      {
+        "_id": {
+          "$oid": "6311c083f2fce6ea18172fba"
+        },
+        "roomNumbers": 101
+      }
+    ],
+    "dateStart": "2022-11-26T17:00:00.000Z",
+    "dateEnd": "2022-11-29T17:00:00.000Z",
+    "price": 350,
+    "payment": "Cash",
+    "status": "Booked"
+  }
+]

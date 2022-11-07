@@ -1,4 +1,7 @@
+const mongoose = require("mongoose");
 const Hotel = require("../models/Hotel");
+const Transaction = require("../models/Transaction");
+const Room = require("../models/Room");
 
 const filterHotelByCity = (hotels) => {
   const result = [
@@ -101,6 +104,138 @@ exports.getHotelsbyArea = (request, response, next) => {
         response.statusMessage = "No hotels found";
         response.status(404).end();
       }
+    })
+    .catch((err) => console.log("::ERROR:", err));
+};
+
+const searchHotelByLocation = (location) => {
+  const result = [];
+  return Hotel.find()
+    .then((hotels) => {
+      hotels.forEach((hotel) => {
+        let city = hotel.city.replace(/ /g, "");
+        if (city.toLowerCase() === location.toLowerCase()) {
+          result.push(hotel);
+        }
+      });
+      // console.log("========================");
+      // result.forEach((item) => {
+      //   console.log("item.name:", item.name);
+      //   console.log("item.city:", item.city);
+      // });
+      return result;
+    })
+    .catch((err) => console.log("::ERROR:", err));
+};
+
+const findRoomList = (hotelId) => {
+  Hotel.findOne({ _id: hotelId })
+    .then((hotel) => {
+      const hotelRooms = hotel.rooms;
+      // console.log("hotelRooms:", hotelRooms);
+      // hotelRooms.forEach((item) => {
+      //   Room.find({ _id: new mongoose.Schema.Types.ObjectId(item) })
+      //     .then((rooms) => {
+      //       const result = [];
+      //       rooms.forEach((room) => {
+      //         roomNumbers.forEach((item) => {
+      //           result.push({ _id: room._id, roomNumber: item });
+      //         });
+      //       });
+      //       console.log("result:", result);
+      //     })
+      //     .catch((err) => console.log("::ERROR:", err));
+      // });
+    })
+    .catch((err) => console.log("::ERROR:", err));
+};
+
+// calculate the calendar user will stay
+const calTimeStay = (start, end) => {
+  // console.log("start:", start);
+  // console.log("end:", end);
+
+  // convert date object to string
+  const dateToString = (date) => {
+    return (
+      date.getFullYear().toString() +
+      "-" +
+      date.getMonth().toString() +
+      "-" +
+      date.getDate().toString()
+    );
+  };
+
+  const stayCalendar = [dateToString(start)];
+
+  // set number of day
+  const daysNumber = end.getDate() - start.getDate() - 1;
+  for (let i = 1; i <= daysNumber; i++) {
+    let date = start;
+    // add date of date object to 1
+    date.setDate(date.getDate() + 1);
+    stayCalendar[i] = dateToString(date);
+  }
+
+  // add the last day user stay
+  stayCalendar[stayCalendar.length] = dateToString(end);
+
+  // convert date string items to date object items
+  stayCalendar.forEach((item, i) => (stayCalendar[i] = new Date(item)));
+  // console.log("stayCalendar:", stayCalendar);
+
+  return stayCalendar;
+};
+
+exports.searchHotels = (request, response, next) => {
+  const requestData = request.body;
+  const person = requestData.options;
+  const date = requestData.date;
+  // console.log("requestData:", requestData);
+
+  // convert date string to date object
+  startDate = new Date(date[0].startDate);
+  endDate = new Date(date[0].endDate);
+
+  // delete all whitespace in string
+  const location = requestData.destination.replace(/ /g, "").trim();
+
+  // search hotel by user request location
+  searchHotelByLocation(location)
+    .then((hotels) => {
+      // seach empty room that can stay
+      console.log("hotels.length:", hotels.length);
+      const emptyRooms = [];
+      const stayCalendar = calTimeStay(startDate, endDate);
+      hotels.forEach((hotel) => {
+        console.log("hotels for each");
+        stayCalendar.forEach((date) => {
+          console.log("stay for each");
+          Transaction.find({ hotel: hotel._id })
+            .then((trans) => {
+              trans.forEach((tran) => {
+                console.log("tran:", tran.dateStart, tran.dateEnd);
+
+                // ========================================
+                // ĐANF LÀM TỚI KHÚC TEST COI KHI LOOP QUA CÁC KHÁCH SẠN THÌ CÓ LOOP ĐỦ CÁC TRAN CỦA TỪNG KS KHÔNG
+                // ========================================
+
+                // if (
+                //   tran.dateStart.getDate() === date.getDate() &&
+                //   tran.status != "Booked" &&
+                //   tran.status != "Checkin"
+                // ) {
+                //   console.log("==============");
+                //   console.log("tran:", tran._id, tran.user);
+                // } else {
+                //   console.log("==============");
+                //   console.log("no tran:");
+                // }
+              });
+            })
+            .catch((err) => console.log("::ERROR:", err));
+        });
+      });
     })
     .catch((err) => console.log("::ERROR:", err));
 };
