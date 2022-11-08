@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-/**user: Username của người đặt phòng
+/**user: user object của người đặt phòng
 hotel: _Id của khách sạn đã đặt
 room: Danh sách các phòng đã đặt
 dateStart: Ngày nhận phòng

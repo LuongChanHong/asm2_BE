@@ -3,6 +3,64 @@ const Hotel = require("../models/Hotel");
 const Transaction = require("../models/Transaction");
 const Room = require("../models/Room");
 
+// compare 2 date to know is later, earlier or same time
+const compareDate = (dateA, dateB) => {
+  if (dateA.getFullYear() > dateB.getFullYear()) {
+    return "later";
+  } else if (dateA.getFullYear() < dateB.getFullYear()) {
+    return "earlier";
+  } else {
+    if (dateA.getMonth() > dateB.getMonth()) {
+      return "later";
+    } else if (dateA.getMonth() < dateB.getMonth()) {
+      return "earlier";
+    } else {
+      if (dateA.getDate() > dateB.getDate()) {
+        return "later";
+      } else if (dateA.getDate() < dateB.getDate()) {
+        return "earlier";
+      } else {
+        return "same";
+      }
+    }
+  }
+};
+
+// update transaction status until today
+const updateTransactionStatus = () => {
+  const toDay = new Date();
+  Transaction.find()
+    .then((trans) => {
+      trans.forEach((tran) => {
+        const compateDateStart = compareDate(toDay, tran.dateStart);
+        const compateDateEnd = compareDate(toDay, tran.dateEnd);
+
+        if (compateDateStart === "earlier" && compateDateEnd === "earlier") {
+          Transaction.findByIdAndUpdate(tran._id, { status: "Booked" })
+            .then((result) => {
+              // console.log("result:", result);
+            })
+            .catch((err) => console.log("::ERROR:", err));
+        }
+        if (compateDateStart === "later" && compateDateEnd === "later") {
+          Transaction.findByIdAndUpdate(tran._id, { status: "Checkout" })
+            .then((result) => {
+              // console.log("result:", result);
+            })
+            .catch((err) => console.log("::ERROR:", err));
+        }
+        if (compateDateStart === "same" && compateDateEnd === "earlier") {
+          Transaction.findByIdAndUpdate(tran._id, { status: "Checkin" })
+            .then((result) => {
+              // console.log("result:", result);
+            })
+            .catch((err) => console.log("::ERROR:", err));
+        }
+      });
+    })
+    .catch((err) => console.log("::ERROR:", err));
+};
+
 const filterHotelByCity = (hotels) => {
   const result = [
     {
@@ -200,41 +258,35 @@ exports.searchHotels = (request, response, next) => {
   // delete all whitespace in string
   const location = requestData.destination.replace(/ /g, "").trim();
 
+  // update transaction status
+  updateTransactionStatus();
+
+  // calculate the calendar user will stay
+  const stayCalendar = calTimeStay(startDate, endDate);
+
   // search hotel by user request location
   searchHotelByLocation(location)
     .then((hotels) => {
-      // seach empty room that can stay
-      console.log("hotels.length:", hotels.length);
+      // console.log("hotels.length:", hotels.length);
       const emptyRooms = [];
-      const stayCalendar = calTimeStay(startDate, endDate);
+      let isEmptyRoom = false;
       hotels.forEach((hotel) => {
-        console.log("hotels for each");
-        stayCalendar.forEach((date) => {
-          console.log("stay for each");
-          Transaction.find({ hotel: hotel._id })
-            .then((trans) => {
+        const rooms = hotel.rooms;
+        // console.log("rooms.length:", rooms.length);
+        // console.log("=========================");
+        Transaction.find({ hotel: hotel._id })
+          .then((trans) => {
+            if (trans.length > 0) {
+              // console.log("trans[0]:", trans[0]);
+
               trans.forEach((tran) => {
-                console.log("tran:", tran.dateStart, tran.dateEnd);
-
-                // ========================================
-                // ĐANF LÀM TỚI KHÚC TEST COI KHI LOOP QUA CÁC KHÁCH SẠN THÌ CÓ LOOP ĐỦ CÁC TRAN CỦA TỪNG KS KHÔNG
-                // ========================================
-
-                // if (
-                //   tran.dateStart.getDate() === date.getDate() &&
-                //   tran.status != "Booked" &&
-                //   tran.status != "Checkin"
-                // ) {
-                //   console.log("==============");
-                //   console.log("tran:", tran._id, tran.user);
-                // } else {
-                //   console.log("==============");
-                //   console.log("no tran:");
-                // }
+                stayCalendar.forEach((date) => {});
               });
-            })
-            .catch((err) => console.log("::ERROR:", err));
-        });
+            } else {
+              //
+            }
+          })
+          .catch((err) => console.log("::ERROR:", err));
       });
     })
     .catch((err) => console.log("::ERROR:", err));

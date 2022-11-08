@@ -6,7 +6,9 @@ password: Mật khẩu người dùng
 fullName: Họ và tên của người dùng
 phoneNumber: Số điện thoại của người dùng
 email: Email của người dùng
-isAdmin: Người dùng này có phải Admin không */
+isAdmin: Người dùng này có phải Admin không 
+transactions: Danh sách các tran đã thực hiện
+*/
 
 const userSchema = new Schema({
   username: {

@@ -62,5 +62,34 @@
     "price": 350,
     "payment": "Cash",
     "status": "Booked"
+  },
+  {
+    "user": {
+      "_id": {
+        "$oid": "635f582dd52649c03cbb41ab"
+      },
+      "username": "user1",
+      "password": "456",
+      "fullName": "booking app new user",
+      "phoneNumber": "0801231234",
+      "email": "user1@mail.com",
+      "isAdmin": false
+    },
+    "hotel": {
+      "$oid": "6311a54a4a642f0142349086"
+    },
+    "rooms": [
+      {
+        "_id": {
+          "$oid": "6310dd998cfecfd90b30ca28"
+        },
+        "roomNumbers": 101
+      }
+    ],
+    "dateStart": "2022-11-07T17:00:00.000Z",
+    "dateEnd": "2022-11-10T17:00:00.000Z",
+    "price": 800,
+    "payment": "Cash",
+    "status": "Checkin"
   }
 ]

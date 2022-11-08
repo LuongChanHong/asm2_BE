@@ -5,7 +5,9 @@ const Schema = mongoose.Schema;
 price: Mức giá của loại phòng đó (tính theo ngày)
 maxPeople: Số người tối đa
 desc: Mô tả về loại phòng
-roomNumbers: Danh sách số phòng của loại phòng này*/
+roomNumbers: Danh sách số phòng của loại phòng này
+hotelId: id hotel của phòng này
+*/
 
 const roomSchema = new Schema({
   title: {

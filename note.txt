@@ -1,5 +1,5 @@
 Nội dung app:
-- hoàn thành render tất cả nội dung home page
+- viết các hàm hỗ trợ tìm kiếm hotel
 
 
 
