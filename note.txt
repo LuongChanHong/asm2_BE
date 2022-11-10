@@ -1,5 +1,5 @@
 Nội dung app:
-- Tìm được các phòng trống từ transaction theo thời gian user book
+- Tìm được các phòng trống ngoài transaction theo thời gian user book
 
 
 

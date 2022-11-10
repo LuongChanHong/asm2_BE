@@ -190,28 +190,6 @@ const searchHotelByLocation = (location) => {
     .catch((err) => console.log("::ERROR:", err));
 };
 
-const findRoomList = (hotelId) => {
-  Hotel.findOne({ _id: hotelId })
-    .then((hotel) => {
-      const hotelRooms = hotel.rooms;
-      // console.log("hotelRooms:", hotelRooms);
-      // hotelRooms.forEach((item) => {
-      //   Room.find({ _id: new mongoose.Schema.Types.ObjectId(item) })
-      //     .then((rooms) => {
-      //       const result = [];
-      //       rooms.forEach((room) => {
-      //         roomNumbers.forEach((item) => {
-      //           result.push({ _id: room._id, roomNumber: item });
-      //         });
-      //       });
-      //       console.log("result:", result);
-      //     })
-      //     .catch((err) => console.log("::ERROR:", err));
-      // });
-    })
-    .catch((err) => console.log("::ERROR:", err));
-};
-
 // calculate the calendar user will stay
 const calTimeStay = (start, end) => {
   // console.log("start:", start);
@@ -250,61 +228,24 @@ const calTimeStay = (start, end) => {
   return stayCalendar;
 };
 
-exports.searchHotels = (request, response, next) => {
-  const requestData = request.body;
-  const person = requestData.options;
-  const date = requestData.date;
-  // console.log("===================================");
-  // console.log("requestData.date:", requestData.date);
-
-  // convert date string to date object
-  // startDate = new Date(Date.UTC(date[0].startDate));
-  // endDate = new Date(Date.UTC(date[0].endDate));
+//
+const findEmptyRoomFromTransaction = (date, location) => {
   startDate = new Date(date[0].startDate);
   endDate = new Date(date[0].endDate);
-  // console.log(
-  //   "startDate:",
-  //   startDate.getUTCDate(),
-  //   "/",
-  //   startDate.getUTCMonth() + 1,
-  //   "/",
-  //   startDate.getUTCFullYear()
-  // );
-
-  // delete all whitespace in string
-  const location = requestData.destination.replace(/ /g, "").trim();
-
-  // update transaction status
-  updateTransactionStatus();
-
   // calculate the calendar user will stay
   const stayCalendar = calTimeStay(startDate, endDate);
-  // console.log("stayCalendar:", stayCalendar);
-
-  // search hotel by user request location
-  searchHotelByLocation(location)
+  const emptyRooms = [];
+  return searchHotelByLocation(location)
     .then((hotels) => {
-      // console.log("hotels.length:", hotels.length);
-      const emptyRooms = [];
-      const emptyRoomFromTran = [];
-      let allDayEmpty = true;
-      hotels.forEach((hotel) => {
-        const rooms = hotel.rooms;
-        // console.log("rooms.length:", rooms.length);
-        // console.log("=========================");
-        Transaction.find({ hotel: hotel._id })
-          .then((trans) => {
-            if (trans.length > 0) {
-              // console.log("trans.length:", trans.length);
-
-              // điều kiện phòng trống:
-              // đến ngày 5 phòng đó đã được checkout => phòng trống
-              trans.forEach((tran) => {
+      return Transaction.find()
+        .then((trans) => {
+          let allDayEmpty = true;
+          // loop each room in transaction in hotel list loop
+          // to find checkout room by time user want to book
+          hotels.forEach((hotel) => {
+            trans.forEach((tran) => {
+              if (tran.hotel.toString() == hotel._id.toString()) {
                 stayCalendar.forEach((date) => {
-                  // console.log("date:", date);
-                  // console.log("tran.dateEnd:", tran.dateEnd);
-
-                  // const roomEmptyToday = true;
                   // so sánh date này với dateEnd của tran
                   // => nếu date > dateEnd => phòng trống
                   // => nếu date  = dateEnd => phòng trống
@@ -320,19 +261,70 @@ exports.searchHotels = (request, response, next) => {
                     allDayEmpty &= false;
                   }
                 });
+                // is all day in stayCalendar is that transaction rooms is empty
                 if (allDayEmpty) {
                   // console.log("trans.rooms:", trans.rooms);
-                  tran.rooms.forEach((room) => emptyRoomFromTran.push(room));
+                  tran.rooms.forEach((room) =>
+                    emptyRooms.push({
+                      roomId: room._id,
+                      roomNumber: room.roomNumbers,
+                    })
+                  );
                 }
                 allDayEmpty = true;
-              });
-              console.log("emptyRoomFromTran:", emptyRoomFromTran);
-            } else {
-              // trường hợp không có tran nào
-            }
-          })
-          .catch((err) => console.log("::ERROR:", err));
-      });
+              } else {
+                // trường hợp không có tran nào thuộc về hotel
+              }
+            });
+          });
+          // console.log("emptyRooms.length:", emptyRooms.length);
+          return emptyRooms;
+        })
+        .catch((err) => console.log("::ERROR:", err));
     })
     .catch((err) => console.log("::ERROR:", err));
+};
+
+// find empty hotel rooms that hasn't been included in any transactions yet
+const findOtherEmptyRoom = async (tranEmptyRooms) => {
+  const roomIntances = await Room.find();
+
+  const allHotelRooms = [];
+  // create room item that have only 1 room number in each
+  roomIntances.forEach((intance) =>
+    intance.roomNumbers.forEach((number) => {
+      allHotelRooms.push({ roomId: intance._id, roomNumber: number });
+    })
+  );
+  // find rooms that not include in any transaction
+  allHotelRooms.forEach((hotelRoom, index) => {
+    tranEmptyRooms.forEach((tranRoom) => {
+      if (tranRoom.roomId.toString() == hotelRoom.roomId.toString()) {
+        allHotelRooms.splice(index, 1);
+      }
+    });
+  });
+
+  return allHotelRooms;
+};
+
+exports.searchHotels = async (request, response, next) => {
+  const requestData = request.body;
+  const person = requestData.options;
+  const date = requestData.date;
+  // console.log("===================================");
+  // console.log("requestData.date:", requestData.date);
+
+  // delete all whitespace in string
+  const location = requestData.destination.replace(/ /g, "").trim();
+
+  // update transaction status
+  updateTransactionStatus();
+
+  const tranEmptyRooms = await findEmptyRoomFromTransaction(date, location);
+
+  const otherEmptyRoom = await findOtherEmptyRoom(tranEmptyRooms);
+
+  console.log("tranEmptyRooms.length:", tranEmptyRooms.length);
+  console.log("otherEmptyRoom.length:", otherEmptyRoom.length);
 };
