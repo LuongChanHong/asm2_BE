@@ -1,6 +1,5 @@
 Nội dung app:
-- Tìm được các phòng trống ngoài transaction theo thời gian user book
-
+- Tìm được các hotel theo yêu cầu người dùng
 
 
 Set up server app: 

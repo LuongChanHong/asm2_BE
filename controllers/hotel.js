@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const Mongoose = require("mongoose");
 const Hotel = require("../models/Hotel");
 const Transaction = require("../models/Transaction");
 const Room = require("../models/Room");
@@ -228,8 +228,8 @@ const calTimeStay = (start, end) => {
   return stayCalendar;
 };
 
-//
-const findEmptyRoomFromTransaction = (date, location) => {
+// find checked out hotel rooms
+const findCheckedOutRooms = (date, location) => {
   startDate = new Date(date[0].startDate);
   endDate = new Date(date[0].endDate);
   // calculate the calendar user will stay
@@ -268,6 +268,7 @@ const findEmptyRoomFromTransaction = (date, location) => {
                     emptyRooms.push({
                       roomId: room._id,
                       roomNumber: room.roomNumbers,
+                      hotelId: tran.hotel,
                     })
                   );
                 }
@@ -285,32 +286,118 @@ const findEmptyRoomFromTransaction = (date, location) => {
     .catch((err) => console.log("::ERROR:", err));
 };
 
-// find empty hotel rooms that hasn't been included in any transactions yet
-const findOtherEmptyRoom = async (tranEmptyRooms) => {
-  const roomIntances = await Room.find();
+//
+const addHotelIdToRoomList = (hotelList, roomList) => {
+  // create room list that have hotel id
+  // for add hotel id to empty room list
+  const roomWithHotelId = [];
+  hotelList.forEach((hotel) => {
+    hotel.rooms.forEach((room) => {
+      roomWithHotelId.push({ hotelId: hotel._id, roomId: room });
+    });
+  });
+  // add hotel id to empty room object item
+  const _roomList = [...roomList];
+  roomWithHotelId.forEach((room) => {
+    _roomList.forEach((_room, index) => {
+      const roomId = new Mongoose.Types.ObjectId(room.roomId);
+      const _roomId = _room.roomId;
+      if (_roomId.toString() === roomId.toString()) {
+        roomList[index] = {
+          ...roomList[index],
+          hotelId: room.hotelId,
+        };
+      }
+    });
+  });
+  // delete room item dont have hotel id after add for some reason
+  const result = [];
+  roomList.forEach((room, index) => {
+    if (room.hotelId) {
+      result.push(room);
+    }
+  });
 
-  const allHotelRooms = [];
+  return result;
+};
+
+// find all empty hotel rooms
+const findOtherEmptyRooms = async (tranEmptyRooms, location) => {
+  const roomList = await Room.find();
+  const hotelList = await searchHotelByLocation(location);
+  const otherEmptyRooms = [];
   // create room item that have only 1 room number in each
-  roomIntances.forEach((intance) =>
-    intance.roomNumbers.forEach((number) => {
-      allHotelRooms.push({ roomId: intance._id, roomNumber: number });
+  roomList.forEach((room) =>
+    room.roomNumbers.forEach((number) => {
+      otherEmptyRooms.push({ roomId: room._id, roomNumber: number });
     })
   );
+
   // find rooms that not include in any transaction
-  allHotelRooms.forEach((hotelRoom, index) => {
-    tranEmptyRooms.forEach((tranRoom) => {
-      if (tranRoom.roomId.toString() == hotelRoom.roomId.toString()) {
-        allHotelRooms.splice(index, 1);
+  otherEmptyRooms.forEach((hotelRoom, index) => {
+    tranEmptyRooms.forEach((emptyRoom) => {
+      if (emptyRoom.roomId.toString() == hotelRoom.roomId.toString()) {
+        otherEmptyRooms.splice(index, 1);
       }
     });
   });
 
-  return allHotelRooms;
+  const result = addHotelIdToRoomList(hotelList, otherEmptyRooms);
+  return result;
+};
+
+// find hotels have enough room for user booking request
+const findHotelsWithEnoughRooms = async (requireRoom, emptyRoomList) => {
+  const peopleQuantity = requireRoom.adult + requireRoom.children;
+  const allRoomList = await Room.find();
+  const hotelList = await Hotel.find();
+
+  // add capacity to room item in emptyRoomList
+  const _emptyRoomList = [...emptyRoomList];
+  allRoomList.forEach((room) => {
+    _emptyRoomList.forEach((emptyRoom, index) => {
+      if (emptyRoom.roomId.toString() === room._id.toString()) {
+        emptyRoomList[index] = {
+          ...emptyRoomList[index],
+          maxPeople: room.maxPeople,
+        };
+      }
+    });
+  });
+
+  // create hotel capacity array
+  const hotelsCurrentCapacity = hotelList.map((hotel) => {
+    return { hotelId: hotel._id, capacity: 0 };
+  });
+
+  // calculate each hotel capacity
+  hotelsCurrentCapacity.forEach((hotel) => {
+    emptyRoomList.forEach((emptyRoom) => {
+      if (emptyRoom.hotelId.toString() === hotel.hotelId.toString()) {
+        hotel.capacity += emptyRoom.maxPeople;
+      }
+    });
+  });
+
+  // find hotels that have enough capacity
+  const result = [];
+  hotelList.forEach((hotel) => {
+    hotelsCurrentCapacity.forEach((hotelCap) => {
+      if (
+        hotelCap.capacity >= peopleQuantity &&
+        hotelCap.hotelId.toString() === hotel._id.toString()
+      ) {
+        result.push(hotel);
+      }
+    });
+  });
+
+  return result;
 };
 
 exports.searchHotels = async (request, response, next) => {
   const requestData = request.body;
-  const person = requestData.options;
+  const requireRoom = requestData.options;
   const date = requestData.date;
   // console.log("===================================");
   // console.log("requestData.date:", requestData.date);
@@ -321,10 +408,16 @@ exports.searchHotels = async (request, response, next) => {
   // update transaction status
   updateTransactionStatus();
 
-  const tranEmptyRooms = await findEmptyRoomFromTransaction(date, location);
+  const checkedOutRooms = await findCheckedOutRooms(date, location);
+  const otherEmptyRooms = await findOtherEmptyRooms(checkedOutRooms, location);
+  const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
+  // console.log("checkedOutRooms:", checkedOutRooms);
+  // console.log("otherEmptyRooms:", otherEmptyRooms);
 
-  const otherEmptyRoom = await findOtherEmptyRoom(tranEmptyRooms);
+  const validHotels = await findHotelsWithEnoughRooms(
+    requireRoom,
+    allEmptyRooms
+  );
 
-  console.log("tranEmptyRooms.length:", tranEmptyRooms.length);
-  console.log("otherEmptyRoom.length:", otherEmptyRoom.length);
+  // console.log("validHotels:", validHotels);
 };
