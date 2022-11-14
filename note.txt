@@ -1,5 +1,5 @@
 Nội dung app:
-- Tìm được các hotel theo yêu cầu người dùng
+- Hiển thị thông tin chi tiết khách sạn
 
 
 Set up server app: 

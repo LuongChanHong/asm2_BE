@@ -28,7 +28,7 @@ const compareDate = (dateA, dateB) => {
 
 // update transaction status until today
 const updateTransactionStatus = () => {
-  console.log("TRANSACTION UPDATED");
+  // console.log("TRANSACTION UPDATED");
   const toDay = new Date();
   Transaction.find()
     .then((trans) => {
@@ -140,13 +140,11 @@ const filterPropertyByType = (hotels) => {
   return result;
 };
 
-const filterHotelByFeature = (hotels) => {
-  const result = [];
-  hotels.forEach((hotel) => {
-    if (hotel.featured) {
-      result.push(hotel);
-    }
-  });
+const filterHotelByRating = (hotels) => {
+  // const result = hotels.sort((a, b) => (a.rating > b.rating ? -1 : 1));
+  const result = hotels.sort((a, b) => b.rating - a.rating);
+  // console.log("========================");
+  // result.forEach((hotel) => console.log("hotel.rating:", hotel.rating));
   return result;
 };
 
@@ -156,7 +154,7 @@ exports.getHotelsbyArea = (request, response, next) => {
       if (hotels.length > 0) {
         const hotelByCity = filterHotelByCity(hotels);
         const propertyByType = filterPropertyByType(hotels);
-        const hotelByRating = filterHotelByFeature(hotels);
+        const hotelByRating = filterHotelByRating(hotels);
         response.send({
           hotelByCity: hotelByCity,
           propertyByType: propertyByType,
@@ -170,24 +168,21 @@ exports.getHotelsbyArea = (request, response, next) => {
     .catch((err) => console.log("::ERROR:", err));
 };
 
-const searchHotelByLocation = (location) => {
+const searchHotelByLocation = async (location) => {
   const result = [];
-  return Hotel.find()
-    .then((hotels) => {
-      hotels.forEach((hotel) => {
-        let city = hotel.city.replace(/ /g, "");
-        if (city.toLowerCase() === location.toLowerCase()) {
-          result.push(hotel);
-        }
-      });
-      // console.log("========================");
-      // result.forEach((item) => {
-      //   console.log("item.name:", item.name);
-      //   console.log("item.city:", item.city);
-      // });
-      return result;
-    })
-    .catch((err) => console.log("::ERROR:", err));
+  const hotelList = await Hotel.find();
+  hotelList.forEach((hotel) => {
+    let city = hotel.city.replace(/ /g, "");
+    if (city.toLowerCase() === location.toLowerCase()) {
+      result.push(hotel);
+    }
+  });
+  // console.log("========================");
+  // result.forEach((item) => {
+  //   console.log("item.name:", item.name);
+  //   console.log("item.city:", item.city);
+  // });
+  return result;
 };
 
 // calculate the calendar user will stay
@@ -229,61 +224,52 @@ const calTimeStay = (start, end) => {
 };
 
 // find checked out hotel rooms
-const findCheckedOutRooms = (date, location) => {
+const findCheckedOutRooms = async (date, hotelList) => {
   startDate = new Date(date[0].startDate);
   endDate = new Date(date[0].endDate);
   // calculate the calendar user will stay
   const stayCalendar = calTimeStay(startDate, endDate);
+  const transactionList = await Transaction.find();
   const emptyRooms = [];
-  return searchHotelByLocation(location)
-    .then((hotels) => {
-      return Transaction.find()
-        .then((trans) => {
-          let allDayEmpty = true;
-          // loop each room in transaction in hotel list loop
-          // to find checkout room by time user want to book
-          hotels.forEach((hotel) => {
-            trans.forEach((tran) => {
-              if (tran.hotel.toString() == hotel._id.toString()) {
-                stayCalendar.forEach((date) => {
-                  // so sánh date này với dateEnd của tran
-                  // => nếu date > dateEnd => phòng trống
-                  // => nếu date  = dateEnd => phòng trống
-                  // => nếu date < dateEnd => phòng chưa trống
-                  // nếu phòng trống 3 ngày push tất cả item
-                  // của mảng room tran vào mảng result
-                  // compare 2 date to know is later, earlier or same time
-                  const compare = compareDate(date, tran.dateEnd);
-                  // console.log("compare:", compare);
-                  if (compare === "later" || compare === "same") {
-                    allDayEmpty &= true;
-                  } else {
-                    allDayEmpty &= false;
-                  }
-                });
-                // is all day in stayCalendar is that transaction rooms is empty
-                if (allDayEmpty) {
-                  // console.log("trans.rooms:", trans.rooms);
-                  tran.rooms.forEach((room) =>
-                    emptyRooms.push({
-                      roomId: room._id,
-                      roomNumber: room.roomNumbers,
-                      hotelId: tran.hotel,
-                    })
-                  );
-                }
-                allDayEmpty = true;
-              } else {
-                // trường hợp không có tran nào thuộc về hotel
-              }
-            });
-          });
-          // console.log("emptyRooms.length:", emptyRooms.length);
-          return emptyRooms;
-        })
-        .catch((err) => console.log("::ERROR:", err));
-    })
-    .catch((err) => console.log("::ERROR:", err));
+  let allDayEmpty = true;
+  // loop each room in transaction in hotel list loop
+  // to find checkout room by time user want to book
+  hotelList.forEach((hotel) => {
+    transactionList.forEach((tran) => {
+      if (tran.hotel.toString() == hotel._id.toString()) {
+        stayCalendar.forEach((date) => {
+          // so sánh date này với dateEnd của tran
+          // => nếu date > dateEnd => phòng trống
+          // => nếu date  = dateEnd => phòng trống
+          // => nếu date < dateEnd => phòng chưa trống
+          // nếu phòng trống 3 ngày push tất cả item
+          // của mảng room tran vào mảng result
+          // compare 2 date to know is later, earlier or same time
+          const compare = compareDate(date, tran.dateEnd);
+          // console.log("compare:", compare);
+          if (compare === "later" || compare === "same") {
+            allDayEmpty &= true;
+          } else {
+            allDayEmpty &= false;
+          }
+        });
+        // is all day in stayCalendar is that transaction rooms is empty
+        if (allDayEmpty) {
+          // console.log("trans.rooms:", trans.rooms);
+          tran.rooms.forEach((room) =>
+            emptyRooms.push({
+              roomId: room._id,
+              roomNumber: room.roomNumbers,
+              hotelId: tran.hotel,
+            })
+          );
+        }
+        allDayEmpty = true;
+      }
+    });
+  });
+  // console.log("emptyRooms.length:", emptyRooms.length);
+  return emptyRooms;
 };
 
 //
@@ -312,7 +298,7 @@ const addHotelIdToRoomList = (hotelList, roomList) => {
   });
   // delete room item dont have hotel id after add for some reason
   const result = [];
-  roomList.forEach((room, index) => {
+  roomList.forEach((room) => {
     if (room.hotelId) {
       result.push(room);
     }
@@ -322,9 +308,8 @@ const addHotelIdToRoomList = (hotelList, roomList) => {
 };
 
 // find all empty hotel rooms
-const findOtherEmptyRooms = async (tranEmptyRooms, location) => {
+const findOtherEmptyRooms = async (tranEmptyRooms, hotelList) => {
   const roomList = await Room.find();
-  const hotelList = await searchHotelByLocation(location);
   const otherEmptyRooms = [];
   // create room item that have only 1 room number in each
   roomList.forEach((room) =>
@@ -405,19 +390,45 @@ exports.searchHotels = async (request, response, next) => {
   // delete all whitespace in string
   const location = requestData.destination.replace(/ /g, "").trim();
 
-  // update transaction status
-  updateTransactionStatus();
+  const hotelsByLocation = await searchHotelByLocation(location);
+  if (hotelsByLocation.length > 0) {
+    // update transaction status
+    updateTransactionStatus();
 
-  const checkedOutRooms = await findCheckedOutRooms(date, location);
-  const otherEmptyRooms = await findOtherEmptyRooms(checkedOutRooms, location);
-  const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
-  // console.log("checkedOutRooms:", checkedOutRooms);
-  // console.log("otherEmptyRooms:", otherEmptyRooms);
+    const checkedOutRooms = await findCheckedOutRooms(date, hotelsByLocation);
 
-  const validHotels = await findHotelsWithEnoughRooms(
-    requireRoom,
-    allEmptyRooms
-  );
+    const otherEmptyRooms = await findOtherEmptyRooms(
+      checkedOutRooms,
+      hotelsByLocation
+    );
 
-  // console.log("validHotels:", validHotels);
+    const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
+    // console.log("checkedOutRooms.length:", checkedOutRooms.length);
+    // console.log("otherEmptyRooms.length:", otherEmptyRooms.length);
+
+    const validHotels = await findHotelsWithEnoughRooms(
+      requireRoom,
+      allEmptyRooms
+    );
+
+    // console.log("validHotels.length:", validHotels.length);
+    response.send(validHotels);
+  } else {
+    response.statusMessage = "not found hotels";
+    response.status(404).end();
+  }
+};
+
+exports.getHotelById = (request, response, next) => {
+  const id = request.params.id;
+  Hotel.findById(new Mongoose.Types.ObjectId(id))
+    .then((hotel) => {
+      if (hotel) {
+        response.send(hotel);
+      } else {
+        response.statusMessage = "not found hotel";
+        response.status(404).end();
+      }
+    })
+    .catch((err) => console.log("::ERROR:", err));
 };
