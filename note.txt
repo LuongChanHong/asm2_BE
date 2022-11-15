@@ -1,6 +1,5 @@
 Nội dung app:
-- Hiển thị thông tin chi tiết khách sạn
-
+- Dựng xong form đặt phòng
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev
