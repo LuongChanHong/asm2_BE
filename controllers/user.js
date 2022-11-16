@@ -61,3 +61,13 @@ exports.signup = (request, response, next) => {
     })
     .catch((err) => console.log("::ERROR:", err));
 };
+
+exports.findUserByEmail = async (request, response, next) => {
+  const email = request.body.email;
+  try {
+    const user = await User.findOne({ email: email });
+    response.send(user);
+  } catch (err) {
+    console.log("err:", err);
+  }
+};

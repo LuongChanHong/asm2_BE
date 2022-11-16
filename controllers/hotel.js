@@ -432,3 +432,59 @@ exports.getHotelById = (request, response, next) => {
     })
     .catch((err) => console.log("::ERROR:", err));
 };
+
+exports.getRoomsByDate = async (request, response, next) => {
+  const requestData = request.body;
+  // console.log("requestData.date:", requestData.date);
+  const date = requestData.date;
+  const hotel = [{ ...requestData.hotel }];
+  updateTransactionStatus();
+
+  // get all available rooms by request date
+  const checkedOutRooms = await findCheckedOutRooms(date, hotel);
+  const otherEmptyRooms = await findOtherEmptyRooms(checkedOutRooms, hotel);
+  const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
+  // console.log("allEmptyRooms:", allEmptyRooms);
+
+  // filter unique room type id from available room list
+  const uniqueRoomId = [...new Set(allEmptyRooms.map((item) => item.roomId))];
+  // alternative method
+  // return object have unique room id with all attribute
+  // const key = "roomId";
+  // const _allEmptyRooms = allEmptyRooms.map((item) => [item[key], item]);
+  // const uniqueItems = [...new Map(_allEmptyRooms).values()];
+  // console.log("uniqueItems:", uniqueItems);
+
+  const resRoomResult = uniqueRoomId.map((id) => {
+    return { roomId: id, rooms: [] };
+  });
+
+  // push room number to every available room type
+  uniqueRoomId.forEach((uniqueId, index) => {
+    allEmptyRooms.forEach((room) => {
+      if (room.roomId.toString() === uniqueId.toString()) {
+        resRoomResult[index].rooms.push(room.roomNumber);
+      }
+    });
+  });
+
+  // add more room type detail for render purpose
+  const roomDetail = await Room.find();
+  roomDetail.forEach((room) => {
+    resRoomResult.forEach((resRoom, index) => {
+      if (resRoom.roomId.toString() === room._id.toString()) {
+        resRoomResult[index] = {
+          ...resRoomResult[index],
+          desc: room.desc,
+          maxPeople: room.maxPeople,
+          price: room.price,
+          title: room.title,
+        };
+      }
+    });
+  });
+
+  // console.log("resRoomResult:", resRoomResult);
+
+  response.send(resRoomResult);
+};
