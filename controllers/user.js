@@ -36,6 +36,13 @@ const createPhoneNumber = () => {
   return phoneNumber;
 };
 
+const createIdentityNumber = () => {
+  let identity = Math.random();
+  // get character index from 2 to 13
+  identity = identity.toString().slice(2, 14);
+  return identity;
+};
+
 exports.signup = (request, response, next) => {
   const requestData = request.body;
   // console.log("requestData:", requestData);
@@ -47,6 +54,7 @@ exports.signup = (request, response, next) => {
     phoneNumber: createPhoneNumber(),
     email: requestData.email,
     isAdmin: false,
+    identity: createIdentityNumber(),
   });
   User.findOne({ email: newUser.email })
     .then((user) => {

@@ -1,5 +1,5 @@
 Nội dung app:
-- lọc được phòng trống khi chọn ngày đặt phòng
+- tụ động nhập thông tin người dùng vào form khi đặt phòng
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev
