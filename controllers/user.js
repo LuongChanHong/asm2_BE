@@ -46,15 +46,15 @@ const createIdentityNumber = () => {
 exports.signup = (request, response, next) => {
   const requestData = request.body;
   // console.log("requestData:", requestData);
-  const name = requestData.email.split("@")[0];
+  // const name = requestData.email.split("@")[0];
   const newUser = new User({
-    username: name,
+    username: "",
     password: requestData.password,
-    fullName: name,
-    phoneNumber: createPhoneNumber(),
+    fullName: "",
+    phoneNumber: "",
     email: requestData.email,
     isAdmin: false,
-    identity: createIdentityNumber(),
+    identity: "",
   });
   User.findOne({ email: newUser.email })
     .then((user) => {
