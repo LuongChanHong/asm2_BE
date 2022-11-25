@@ -225,51 +225,106 @@ const calTimeStay = (start, end) => {
 
 // find checked out hotel rooms
 const findCheckedOutRooms = async (date, hotelList) => {
-  startDate = new Date(date[0].startDate);
-  endDate = new Date(date[0].endDate);
-  // calculate the calendar user will stay
-  const stayCalendar = calTimeStay(startDate, endDate);
-  const transactionList = await Transaction.find();
-  const emptyRooms = [];
-  let allDayEmpty = true;
-  // loop each room in transaction in hotel list loop
-  // to find checkout room by time user want to book
-  hotelList.forEach((hotel) => {
-    transactionList.forEach((tran) => {
-      if (tran.hotel.toString() == hotel._id.toString()) {
-        stayCalendar.forEach((date) => {
-          // so sánh date này với dateEnd của tran
-          // => nếu date > dateEnd => phòng trống
-          // => nếu date  = dateEnd => phòng trống
-          // => nếu date < dateEnd => phòng chưa trống
-          // nếu phòng trống 3 ngày push tất cả item
-          // của mảng room tran vào mảng result
-          // compare 2 date to know is later, earlier or same time
-          const compare = compareDate(date, tran.dateEnd);
-          // console.log("compare:", compare);
-          if (compare === "later" || compare === "same") {
-            allDayEmpty &= true;
-          } else {
-            allDayEmpty &= false;
-          }
-        });
-        // is all day in stayCalendar is that transaction rooms is empty
-        if (allDayEmpty) {
-          // console.log("trans.rooms:", trans.rooms);
-          tran.rooms.forEach((room) =>
-            emptyRooms.push({
-              roomId: room._id,
-              roomNumber: room.roomNumbers,
-              hotelId: tran.hotel,
-            })
-          );
-        }
-        allDayEmpty = true;
+  // startDate = new Date(date[0].startDate);
+  // endDate = new Date(date[0].endDate);
+  // // calculate the calendar user will stay
+  // const stayCalendar = calTimeStay(startDate, endDate);
+  // const transactionList = await Transaction.find();
+  // const emptyRooms = [];
+  // let allDayEmpty = true;
+  // // loop each room in transaction in hotel list loop
+  // // to find checkout room by time user want to book
+  // hotelList.forEach((hotel) => {
+  //   transactionList.forEach((tran) => {
+  //     if (tran.hotel.toString() == hotel._id.toString()) {
+  //       stayCalendar.forEach((date) => {
+  //         // so sánh date này với dateEnd của tran
+  //         // => nếu date > dateEnd => phòng trống
+  //         // => nếu date  = dateEnd => phòng trống
+  //         // => nếu date < dateEnd => phòng chưa trống
+  //         // nếu phòng trống 3 ngày push tất cả item
+  //         // của mảng room tran vào mảng result
+  //         // compare 2 date to know is later, earlier or same time
+  //         const compare = compareDate(date, tran.dateEnd);
+  //         // console.log("compare:", compare);
+  //         if (compare === "later" || compare === "same") {
+  //           allDayEmpty &= true;
+  //         } else {
+  //           allDayEmpty &= false;
+  //         }
+  //       });
+  //       // is all day in stayCalendar is that transaction rooms is empty
+  //       if (allDayEmpty) {
+  //         // console.log("trans.rooms:", trans.rooms);
+  //         tran.rooms.forEach((room) =>
+  //           emptyRooms.push({
+  //             roomId: room._id,
+  //             roomNumber: room.roomNumber,
+  //             hotelId: tran.hotel,
+  //           })
+  //         );
+  //       }
+  //       allDayEmpty = true;
+  //     }
+  //   });
+  // });
+  const checkoutRooms = [];
+  const checkoutTran = await Transaction.find({ status: "Checkout" });
+  checkoutTran.forEach((tran) => {
+    tran.rooms.forEach((room) => {
+      checkoutRooms.push({
+        roomId: room._id,
+        roomNumber: room.roomNumber,
+        hotelId: tran.hotel,
+      });
+    });
+  });
+
+  const otherStatusRooms = [];
+  const otherStatusTran = await Transaction.find({
+    $or: [{ status: "Checkin" }, { status: "Booking" }],
+  });
+  otherStatusTran.forEach((tran) => {
+    tran.rooms.forEach((room) => {
+      otherStatusRooms.push({
+        roomId: room._id,
+        roomNumber: room.roomNumber,
+        hotelId: tran.hotel,
+      });
+    });
+  });
+
+  checkoutRooms.forEach((cRoom, index) => {
+    otherStatusRooms.forEach((oRoom) => {
+      if (
+        cRoom.hotelId.toString() === oRoom.hotelId.toString() &&
+        cRoom.roomId.toString() === oRoom.roomId.toString() &&
+        cRoom.roomNumber == oRoom.roomNumber
+      ) {
+        checkoutRooms.splice(index, 1);
       }
     });
   });
+  // console.log("checkoutRooms:", checkoutRooms);
+
+  return checkoutRooms;
+
+  // emptyRooms.forEach((eRoom, index) => {
+  //   otherStatusTran.forEach((tran) => {
+  //     tran.rooms.forEach((room) => {
+  //       if (
+  //         tran.hotel.toString() === eRoom.hotelId.toString() &&
+  //         room._id.toString() === eRoom.roomId.toString() &&
+  //         room.roomNumber == eRoom.roomNumber
+  //       ) {
+  //         emptyRooms.splice(index, 1);
+  //       }
+  //     });
+  //   });
+  // });
+
   // console.log("emptyRooms.length:", emptyRooms.length);
-  return emptyRooms;
+  // return emptyRooms;
 };
 
 //
@@ -318,17 +373,37 @@ const findOtherEmptyRooms = async (tranEmptyRooms, hotelList) => {
     })
   );
 
-  // find rooms that not include in any transaction
-  otherEmptyRooms.forEach((hotelRoom, index) => {
-    tranEmptyRooms.forEach((emptyRoom) => {
-      if (emptyRoom.roomId.toString() == hotelRoom.roomId.toString()) {
-        otherEmptyRooms.splice(index, 1);
-      }
+  // console.log("=========================");
+  // console.log(" hotelList[0]._id:", hotelList[0]._id);
+  // console.log("tranEmptyRooms:", tranEmptyRooms);
+  // console.log("otherEmptyRooms:", otherEmptyRooms);
+  let result;
+  if (hotelList.length === 1) {
+    hotelList[0].rooms.forEach((room) => {
+      // find rooms that not include in any transaction
+      tranEmptyRooms.forEach((emptyRoom) => {
+        if (emptyRoom.roomId.toString() == room) {
+          tranEmptyRooms.splice(index, 1);
+        }
+      });
     });
-  });
-
-  const result = addHotelIdToRoomList(hotelList, otherEmptyRooms);
+    result = addHotelIdToRoomList(hotelList, tranEmptyRooms);
+    console.log("result:", result);
+  } else {
+    // find rooms that not include in any transaction
+    otherEmptyRooms.forEach((hotelRoom, index) => {
+      // console.log("hotelRoom.roomId:", hotelRoom.roomId);
+      tranEmptyRooms.forEach((emptyRoom) => {
+        if (emptyRoom.roomId.toString() === hotelRoom.roomId.toString()) {
+          otherEmptyRooms.splice(index, 1);
+        }
+      });
+    });
+    result = addHotelIdToRoomList(hotelList, otherEmptyRooms);
+  }
   return result;
+
+  // console.log("otherEmptyRooms:", otherEmptyRooms);
 };
 
 // find hotels have enough room for user booking request
@@ -435,7 +510,7 @@ exports.getHotelById = (request, response, next) => {
 
 exports.getRoomsByDate = async (request, response, next) => {
   const requestData = request.body;
-  // console.log("requestData.date:", requestData.date);
+  // console.log("requestData:", requestData);
   const date = requestData.date;
   const hotel = [{ ...requestData.hotel }];
   updateTransactionStatus();
@@ -443,6 +518,10 @@ exports.getRoomsByDate = async (request, response, next) => {
   // get all available rooms by request date
   const checkedOutRooms = await findCheckedOutRooms(date, hotel);
   const otherEmptyRooms = await findOtherEmptyRooms(checkedOutRooms, hotel);
+  // console.log("========================");
+  // console.log("checkedOutRooms:", checkedOutRooms); // chưa xét các phòng được book lại
+  // console.log("otherEmptyRooms:", otherEmptyRooms); // đúng
+
   const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
   // console.log("allEmptyRooms:", allEmptyRooms);
 
@@ -488,3 +567,6 @@ exports.getRoomsByDate = async (request, response, next) => {
 
   response.send(resRoomResult);
 };
+// exports.getRoomsByDate = async (request, response, next) => {
+//   await deleteOldCheckoutRooms();
+// };

@@ -35,10 +35,10 @@ const userSchema = new Schema({
     type: Boolean,
     require: true,
   },
-  transactions: {
-    type: Array,
-    require: true,
-  },
+  // transactions: {
+  //   type: Array,
+  //   require: true,
+  // },
   identity: {
     type: String,
     require: true,
