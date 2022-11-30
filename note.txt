@@ -1,5 +1,5 @@
 Nội dung app:
-- sửa lỗi lọc phòng trống theo ngày
+- dựng redux store và login action
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

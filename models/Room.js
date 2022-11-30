@@ -26,14 +26,7 @@ const roomSchema = new Schema({
     type: String,
     require: true,
   },
-  roomNumbers: {
-    type: Array,
-    require: true,
-  },
-  hotelId: {
-    type: Schema.Types.ObjectId,
-    require: true,
-  },
+  roomNumbers: [{ number: Number, unAvailableDates: { type: [Date] } }],
 });
 
 module.exports = mongoose.model("Room", roomSchema);

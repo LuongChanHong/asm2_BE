@@ -3,19 +3,26 @@ const User = require("../models/User");
 // total phone number character
 const phoneNumberChar = 10;
 
-exports.login = (request, response, next) => {
+exports.login = async (request, response, next) => {
   const requestData = request.body;
-  // console.log("requestData:", requestData);
-  User.findOne({ email: requestData.email })
-    .then((user) => {
-      // console.log("user:", user);
-      if (user) {
-        response.send({ isUserExist: true });
-      } else {
-        response.send(null);
-      }
-    })
-    .catch((err) => console.log("::ERROR:", err));
+  try {
+    // console.log("requestData:", requestData);
+    const foundUser = await User.findOne({
+      $and: [
+        { email: requestData.data.email },
+        { password: requestData.data.password },
+      ],
+    });
+
+    if (foundUser === null) {
+      response.statusMessage = "user not exist";
+      response.status(404).end();
+    } else {
+      response.send(foundUser);
+    }
+  } catch (err) {
+    console.log("err:", err);
+  }
 };
 
 /**username: từ mail tách ra x
@@ -43,10 +50,11 @@ const createIdentityNumber = () => {
   return identity;
 };
 
-exports.signup = (request, response, next) => {
+exports.signup = async (request, response, next) => {
   const requestData = request.body;
   // console.log("requestData:", requestData);
   // const name = requestData.email.split("@")[0];
+
   const newUser = new User({
     username: "",
     password: requestData.password,
@@ -56,26 +64,31 @@ exports.signup = (request, response, next) => {
     isAdmin: false,
     identity: "",
   });
-  User.findOne({ email: newUser.email })
-    .then((user) => {
-      if (user) {
-        // console.log("user:", user);
-        response.statusMessage = "user exist";
-        response.status(409).end();
-      } else {
-        newUser.save();
-        response.send({ email: newUser.email });
-      }
-    })
-    .catch((err) => console.log("::ERROR:", err));
-};
 
-exports.findUserByEmail = async (request, response, next) => {
-  const email = request.body.email;
   try {
-    const user = await User.findOne({ email: email });
-    response.send(user);
+    // console.log("requestData:", requestData);
+    const foundUser = await User.findOne({
+      $and: [{ email: requestData.email }, { password: requestData.password }],
+    });
+    if (foundUser === null) {
+      newUser.save();
+      response.end();
+    } else {
+      response.statusMessage = "user exist";
+      response.status(404).end();
+    }
   } catch (err) {
     console.log("err:", err);
   }
+};
+
+exports.findUserByEmail = async (request, response, next) => {
+  // const email = request.body.email;
+  // try {
+  //   const user = await User.findOne({ email: email });
+  //   response.send(user);
+  // } catch (err) {
+  //   console.log("err:", err);
+  // }
+  response.send(request);
 };

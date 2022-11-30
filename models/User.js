@@ -7,7 +7,6 @@ fullName: Họ và tên của người dùng
 phoneNumber: Số điện thoại của người dùng
 email: Email của người dùng
 isAdmin: Người dùng này có phải Admin không 
-transactions: Danh sách các tran đã thực hiện
 */
 
 const userSchema = new Schema({
@@ -35,10 +34,6 @@ const userSchema = new Schema({
     type: Boolean,
     require: true,
   },
-  // transactions: {
-  //   type: Array,
-  //   require: true,
-  // },
   identity: {
     type: String,
     require: true,
