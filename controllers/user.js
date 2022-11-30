@@ -51,8 +51,8 @@ const createIdentityNumber = () => {
 };
 
 exports.signup = async (request, response, next) => {
-  const requestData = request.body;
-  // console.log("requestData:", requestData);
+  const requestData = request.body.data;
+  console.log("requestData:", requestData);
   // const name = requestData.email.split("@")[0];
 
   const newUser = new User({
