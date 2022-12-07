@@ -83,12 +83,12 @@ exports.signup = async (request, response, next) => {
 };
 
 exports.findUserByEmail = async (request, response, next) => {
-  // const email = request.body.email;
-  // try {
-  //   const user = await User.findOne({ email: email });
-  //   response.send(user);
-  // } catch (err) {
-  //   console.log("err:", err);
-  // }
-  response.send(request);
+  const email = request.body.data;
+  console.log("email:", email);
+  try {
+    const user = await User.findOne({ email: email });
+    response.send(user);
+  } catch (err) {
+    console.log("err:", err);
+  }
 };
