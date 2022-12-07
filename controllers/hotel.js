@@ -2,6 +2,7 @@ const Mongoose = require("mongoose");
 const Hotel = require("../models/Hotel");
 const Transaction = require("../models/Transaction");
 const Room = require("../models/Room");
+const { request } = require("express");
 
 // compare 2 date to know is later, earlier or same time
 const compareDate = (dateA, dateB) => {
@@ -504,114 +505,21 @@ exports.getHotelById = (request, response, next) => {
     .catch((err) => console.log("::ERROR:", err));
 };
 
-exports._getRoomsByDate = async (request, response, next) => {
-  const requestData = request.body;
-  // console.log("requestData:", requestData);
-  const date = requestData.date;
-  const hotel = [{ ...requestData.hotel }];
-  updateTransactionStatus();
+exports.getRoomOfHotel = async (request, response, next) => {
+  const hotelId = request.params.id;
+  // console.log("request.params:", request.params);
+  const hotel = await Hotel.findById(hotelId);
+  const rooms = await Promise.all(
+    hotel.rooms.map((room) => {
+      const roomDetail = Room.findById(room);
+      return roomDetail;
+    })
+  );
 
-  // get all available rooms by request date
-  const checkedOutRooms = await findCheckedOutRooms(date, hotel);
-  const otherEmptyRooms = await findOtherEmptyRooms(checkedOutRooms, hotel);
-
-  const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
-  // console.log("allEmptyRooms:", allEmptyRooms);
-
-  // filter unique room type id from available room list
-  const uniqueRoomId = [...new Set(allEmptyRooms.map((item) => item.roomId))];
-  // alternative method
-  // return object have unique room id with all attribute
-  // const key = "roomId";
-  // const _allEmptyRooms = allEmptyRooms.map((item) => [item[key], item]);
-  // const uniqueItems = [...new Map(_allEmptyRooms).values()];
-  // console.log("uniqueItems:", uniqueItems);
-
-  const resRoomResult = uniqueRoomId.map((id) => {
-    return { roomId: id, rooms: [] };
-  });
-
-  // push room number to every available room type
-  uniqueRoomId.forEach((uniqueId, index) => {
-    allEmptyRooms.forEach((room) => {
-      if (room.roomId.toString() === uniqueId.toString()) {
-        resRoomResult[index].rooms.push(room.roomNumber);
-      }
-    });
-  });
-
-  // add more room type detail for render purpose
-  const roomDetail = await Room.find();
-  roomDetail.forEach((room) => {
-    resRoomResult.forEach((resRoom, index) => {
-      if (resRoom.roomId.toString() === room._id.toString()) {
-        resRoomResult[index] = {
-          ...resRoomResult[index],
-          desc: room.desc,
-          maxPeople: room.maxPeople,
-          price: room.price,
-          title: room.title,
-        };
-      }
-    });
-  });
-
-  // console.log("resRoomResult:", resRoomResult);
-
-  response.send(resRoomResult);
-};
-exports.getRoomsByDate = async (request, response, next) => {
-  // const requestData = request.body;
-  // // console.log("requestData:", requestData);
-  // const date = requestData.date;
-  // const hotel = requestData.hotel;
-  // updateTransactionStatus();
-
-  // // get all available rooms by request date
-  // const checkedOutRooms = await findCheckedOutRooms(); // đúng
-  // const otherEmptyRooms = await findOtherEmptyRooms(hotel); // đúng
-  // // console.log("checkedOutRooms:", checkedOutRooms);
-  // // console.log("============================");
-  // // console.log("otherEmptyRooms:", otherEmptyRooms);
-
-  // const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
-  // let _allEmptyRooms = allEmptyRooms.filter(
-  //   (room) => room.hotelId.toString() === hotel._id.toString()
-  // );
-
-  // // remove duplicate item in  array
-  // _allEmptyRooms = _allEmptyRooms.filter(
-  //   (value, index, self) =>
-  //     index ===
-  //     self.findIndex(
-  //       (item) =>
-  //         item.roomNumber === value.roomNumber &&
-  //         item.hotelId.toString() === value.hotelId.toString()
-  //     )
-  // );
-
-  // const value = [];
-  // hotel.rooms.forEach(async (room) => {
-  //   const foundRoom = await Room.findById(room);
-  //   foundRoom.roomNumbers.forEach((rNumber) => {});
-  // });
-
-  response.send(request.body);
-
-  // add more room type detail for render purpose
-  // const roomDetail = await Room.find();
-  // roomDetail.forEach((room) => {
-  //   result.forEach((rRoom, index) => {
-  //     if (rRoom.roomId.toString() === room._id.toString()) {
-  //       result[index] = {
-  //         ...result[index],
-  //         desc: room.desc,
-  //         maxPeople: room.maxPeople,
-  //         price: room.price,
-  //         title: room.title,
-  //       };
-  //     }
-  //   });
-  // });
-  // response.send(result);
+  if (rooms.length > 0) {
+    response.send(rooms);
+  } else {
+    response.statusMessage = "no rooms found";
+    response.status(404).end();
+  }
 };

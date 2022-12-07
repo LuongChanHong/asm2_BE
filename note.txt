@@ -1,5 +1,5 @@
 Nội dung app:
-- commit code trước khi sửa lại logic đặt phòng bằng form
+- lấy được tất cả phòng của khách sạn được chọn
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev
