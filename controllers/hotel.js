@@ -462,7 +462,7 @@ exports.searchHotels = async (request, response, next) => {
   const location = requestData.destination.replace(/ /g, "").trim();
 
   const hotelsByLocation = await searchHotelByLocation(location);
-  console.log("hotelsByLocation:", hotelsByLocation);
+  // console.log("hotelsByLocation:", hotelsByLocation);
   if (hotelsByLocation.length > 0) {
     // update transaction status
     updateTransactionStatus();
