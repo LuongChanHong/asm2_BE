@@ -1,4 +1,5 @@
 const Mongoose = require("mongoose");
+const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const Room = require("../models/Room");
 
@@ -36,33 +37,96 @@ const checkCheckinOrBooked = (startDate) => {
   }
 };
 
+/**rooms
+ * {_id: 6311c083f2fce6ea18172fba
+    roomNumber: 101}
+ */
+
+// update each room`s roomNumbers`s unAvailableDates
+const updateRoomNumbersDate = (roomNumbersIdList, dates) => {
+  roomNumbersIdList.forEach(async (id) => {
+    await Room.updateOne(
+      { "roomNumbers._id": id },
+      {
+        $push: {
+          "roomNumbers.$.unAvailableDates": dates,
+        },
+      }
+    );
+  });
+};
+
+const deleteDuplicate = (list) => {
+  const result = [];
+  let isExist = (list, id) => {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i]._id.toString() === id.toString()) return true;
+    }
+    return false;
+  };
+
+  list.forEach((item) => {
+    if (!isExist(result, item._id)) {
+      result.push(item);
+    }
+  });
+  return result;
+};
+
+const formatRoomList = async (roomIdList) => {
+  // get rooms have room number id match booked room number id
+  let roomNumbers = await Promise.all(
+    roomIdList.map((room) =>
+      Room.findOne({ "roomNumbers._id": room }, ["roomNumbers"])
+    )
+  );
+  roomNumbers = deleteDuplicate(roomNumbers);
+  // console.log("roomNumbers:", roomNumbers);
+
+  // split each room number into object
+  const eachRNumber = [];
+  roomNumbers.forEach((room) => {
+    room.roomNumbers.forEach((number) => {
+      eachRNumber.push({ _id: room._id, roomNumber: number });
+    });
+  });
+  // console.log("eachRNumber:", eachRNumber);
+
+  // format to final result
+  let result = [];
+  roomIdList.forEach((room) => {
+    eachRNumber.forEach((item) => {
+      if (item.roomNumber._id.toString() === room.toString()) {
+        result.push(item);
+      }
+    });
+  });
+  result = result.map((item) => {
+    return { _id: item._id, roomNumber: item.roomNumber.number };
+  });
+  // console.log("result:", result);
+  return result;
+};
+
 exports.reserve = async (request, response) => {
   const { user, hotel, rooms, dates, price, payment } = request.body;
   //   console.log("request.body:", request.body)
-  //   rooms.forEach(async (room) => {
-  //     console.log("room:", room);
-  //     await Room.updateOne(
-  //       { "roomNumbers._id": room },
-  //       {
-  //         $push: {
-  //           "roomNumbers.$.unAvailableDates": dates,
-  //         },
-  //       }
-  //     );
-  //   });
+  updateRoomNumbersDate(rooms, dates);
+  const bookedRooms = await formatRoomList(rooms);
 
-  //   await User.findByIdAndUpdate(user._id, {
-  //     username: user.username,
-  //     fullName: user.fullName,
-  //     phoneNumber: user.phoneNumber,
-  //     identity: user.identity,
-  //   });
+  await User.findByIdAndUpdate(user._id, {
+    username: user.username,
+    fullName: user.fullName,
+    phoneNumber: user.phoneNumber,
+    identity: user.identity,
+  });
+
   const newTran = new Transaction({
     user: user,
     hotel: new Mongoose.Types.ObjectId(hotel),
-    rooms: "",
+    rooms: bookedRooms,
     dateStart: dates[0],
-    dateEnd: dates[dates.length],
+    dateEnd: dates[dates.length - 1],
     price: price,
     payment: payment,
     status: checkCheckinOrBooked(dates[0]),
@@ -70,5 +134,5 @@ exports.reserve = async (request, response) => {
   // console.log("=================");
   // console.log("newTran:", newTran);
   // newTran.save();
-  //   response.end();
+  response.end();
 };

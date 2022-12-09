@@ -1,5 +1,5 @@
 Nội dung app:
-- xử lí xong giao diện đăng kí phòng bằng form
+- xử lí xong tính năng đăng kí phòng bằng form
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev
