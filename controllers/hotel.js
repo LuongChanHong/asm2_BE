@@ -27,6 +27,23 @@ const compareDate = (dateA, dateB) => {
   }
 };
 
+const deleteDuplicate = (list) => {
+  const result = [];
+  let isExist = (list, id) => {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i]._id.toString() === id.toString()) return true;
+    }
+    return false;
+  };
+
+  list.forEach((item) => {
+    if (!isExist(result, item._id)) {
+      result.push(item);
+    }
+  });
+  return result;
+};
+
 // update transaction status until today
 const updateTransactionStatus = () => {
   // console.log("TRANSACTION UPDATED");
@@ -170,19 +187,7 @@ exports.getHotelsbyArea = (request, response, next) => {
 };
 
 const searchHotelByLocation = async (location) => {
-  const result = [];
-  const hotelList = await Hotel.find();
-  hotelList.forEach((hotel) => {
-    let city = hotel.city.replace(/ /g, "");
-    if (city.toLowerCase() === location.toLowerCase()) {
-      result.push(hotel);
-    }
-  });
-  // console.log("========================");
-  // result.forEach((item) => {
-  //   console.log("item.name:", item.name);
-  //   console.log("item.city:", item.city);
-  // });
+  const result = await Hotel.find({ city: location });
   return result;
 };
 
@@ -255,16 +260,29 @@ const addHotelIdToRoomList = async (roomList) => {
 const findCheckedOutRooms = async () => {
   // find all checkout room
   _allCheckoutRoom = [];
-  const checkoutTran = await Transaction.find({ status: "Checkout" });
-  checkoutTran.forEach((tran) => {
-    tran.rooms.forEach((room) => {
-      _allCheckoutRoom.push({
-        roomId: room._id,
+  const checkoutTran = await Transaction.find({ status: "Checkout" }).select(
+    "_id rooms hotel"
+  );
+  // console.log("checkoutTran[3]:", checkoutTran[3]);
+
+  checkoutTran.forEach((item) => {
+    item.rooms.forEach((room) => {
+      const pushItem = {
+        roomId: room.roomId,
         roomNumber: room.roomNumber,
-        hotelId: tran.hotel,
-      });
+        hotelId: item.hotel,
+      };
+      const isExist = _allCheckoutRoom.find(
+        (item) =>
+          item.roomNumber._id.toString() === room.roomNumber._id.toString()
+      );
+      if (!isExist) {
+        _allCheckoutRoom.push(pushItem);
+      }
     });
   });
+
+  // console.log("_allCheckoutRoom:", _allCheckoutRoom);
 
   // find all other status rooms
   _otherStatusRoom = [];
@@ -274,7 +292,7 @@ const findCheckedOutRooms = async () => {
   otherStatusTran.forEach((tran) => {
     tran.rooms.forEach((room) => {
       _otherStatusRoom.push({
-        roomId: room._id,
+        roomId: room.roomId,
         roomNumber: room.roomNumber,
         hotelId: tran.hotel,
       });
@@ -293,33 +311,16 @@ const findCheckedOutRooms = async () => {
       }
     });
   });
+
   return _allCheckoutRoom;
-
-  // emptyRooms.forEach((eRoom, index) => {
-  //   otherStatusTran.forEach((tran) => {
-  //     tran.rooms.forEach((room) => {
-  //       if (
-  //         tran.hotel.toString() === eRoom.hotelId.toString() &&
-  //         room._id.toString() === eRoom.roomId.toString() &&
-  //         room.roomNumber == eRoom.roomNumber
-  //       ) {
-  //         emptyRooms.splice(index, 1);
-  //       }
-  //     });
-  //   });
-  // });
-
-  // console.log("emptyRooms.length:", emptyRooms.length);
-  // return emptyRooms;
 };
 
 // find all empty rooms not include in any transaction
-const findOtherEmptyRooms = async (hotelList) => {
-  const roomList = await Room.find();
-  const tranList = await Transaction.find();
+const findOtherEmptyRooms = async () => {
+  const roomList = await Room.find().select("roomNumbers");
+  const tranList = await Transaction.find().select("rooms");
   let _roomList = [];
   let _tranList = [];
-  // console.log("hotelList:", hotelList);
   // create room item that have only 1 room number in each
   roomList.forEach((room) =>
     room.roomNumbers.forEach((number) => {
@@ -331,9 +332,8 @@ const findOtherEmptyRooms = async (hotelList) => {
   tranList.forEach((tran) => {
     tran.rooms.forEach((room) => {
       _tranList.push({
-        roomId: room._id,
+        roomId: room.roomId,
         roomNumber: room.roomNumber,
-        hotelId: tran.hotel,
       });
     });
   });
@@ -343,123 +343,74 @@ const findOtherEmptyRooms = async (hotelList) => {
     let roomItem = _roomList[i];
     _tranList.forEach((tranRoom) => {
       if (
-        roomItem.roomId.toString() === tranRoom.roomId.toString() &&
-        roomItem.roomNumber === tranRoom.roomNumber
+        roomItem.roomNumber._id.toString() ===
+        tranRoom.roomNumber._id.toString()
       ) {
         _roomList.splice(i, 1);
       }
     });
   }
-
-  // _roomList.push({
-  //   roomId: new Mongoose.Types.ObjectId("6310dd998cfecfd90b30ca28"),
-  //   roomNumber: 102,
-  // });
-
   _roomList = await addHotelIdToRoomList(_roomList);
   return _roomList;
 };
-// const findOtherEmptyRooms = async (tranEmptyRooms, hotelList) => {
-//   const roomList = await Room.find();
-//   const otherEmptyRooms = [];
-//   // create room item that have only 1 room number in each
-//   roomList.forEach((room) =>
-//     room.roomNumbers.forEach((number) => {
-//       otherEmptyRooms.push({ roomId: room._id, roomNumber: number });
-//     })
-//   );
-
-//   // console.log("=========================");
-//   // console.log(" hotelList[0]._id:", hotelList[0]._id);
-//   // console.log("tranEmptyRooms:", tranEmptyRooms);
-//   // console.log("otherEmptyRooms:", otherEmptyRooms);
-//   let result;
-//   if (hotelList.length === 1) {
-//     hotelList[0].rooms.forEach((room) => {
-//       // find rooms that not include in any transaction
-//       tranEmptyRooms.forEach((emptyRoom) => {
-//         if (emptyRoom.roomId.toString() == room) {
-//           tranEmptyRooms.splice(index, 1);
-//         }
-//       });
-//     });
-//     result = addHotelIdToRoomList(hotelList, tranEmptyRooms);
-//     console.log("result:", result);
-//   } else {
-//     // find rooms that not include in any transaction
-//     otherEmptyRooms.forEach((hotelRoom, index) => {
-//       // console.log("hotelRoom.roomId:", hotelRoom.roomId);
-//       tranEmptyRooms.forEach((emptyRoom) => {
-//         if (emptyRoom.roomId.toString() === hotelRoom.roomId.toString()) {
-//           otherEmptyRooms.splice(index, 1);
-//         }
-//       });
-//     });
-//     result = addHotelIdToRoomList(hotelList, otherEmptyRooms);
-//   }
-//   return result;
-
-//   // console.log("otherEmptyRooms:", otherEmptyRooms);
-// };
 
 // find hotels have enough room for user booking request
 const findHotelsWithEnoughRooms = async (requireRoom, emptyRoomList) => {
-  const peopleQuantity = requireRoom.adult + requireRoom.children;
-  const allRoomList = await Room.find();
-  const hotelList = await Hotel.find();
+  const requireRoomNumber = requireRoom.room;
+  const allRoomList = await Room.find().select("maxPeople");
 
   // add capacity to room item in emptyRoomList
-  const _emptyRoomList = [...emptyRoomList];
-  allRoomList.forEach((room) => {
-    _emptyRoomList.forEach((emptyRoom, index) => {
-      if (emptyRoom.roomId.toString() === room._id.toString()) {
-        emptyRoomList[index] = {
-          ...emptyRoomList[index],
-          maxPeople: room.maxPeople,
-        };
-      }
-    });
-  });
+  // const _emptyRoomList = [...emptyRoomList];
+  // allRoomList.forEach((room) => {
+  //   _emptyRoomList.forEach((emptyRoom, index) => {
+  //     if (emptyRoom.roomId.toString() === room._id.toString()) {
+  //       emptyRoomList[index] = {
+  //         ...emptyRoomList[index],
+  //         maxPeople: room.maxPeople,
+  //       };
+  //     }
+  //   });
+  // });
 
-  // create hotel capacity array
-  const hotelsCurrentCapacity = hotelList.map((hotel) => {
-    return { hotelId: hotel._id, capacity: 0 };
-  });
+  // // create hotel capacity array
+  // const hotelsCurrentCapacity = hotelList.map((hotel) => {
+  //   return { hotelId: hotel._id, capacity: 0 };
+  // });
 
-  // calculate each hotel capacity
-  hotelsCurrentCapacity.forEach((hotel) => {
-    emptyRoomList.forEach((emptyRoom) => {
-      if (emptyRoom.hotelId.toString() === hotel.hotelId.toString()) {
-        hotel.capacity += emptyRoom.maxPeople;
-      }
-    });
-  });
+  // // calculate each hotel capacity
+  // hotelsCurrentCapacity.forEach((hotel) => {
+  //   emptyRoomList.forEach((emptyRoom) => {
+  //     if (emptyRoom.hotelId.toString() === hotel.hotelId.toString()) {
+  //       hotel.capacity += emptyRoom.maxPeople;
+  //     }
+  //   });
+  // });
 
-  // find hotels that have enough capacity
-  const result = [];
-  hotelList.forEach((hotel) => {
-    hotelsCurrentCapacity.forEach((hotelCap) => {
-      if (
-        hotelCap.capacity >= peopleQuantity &&
-        hotelCap.hotelId.toString() === hotel._id.toString()
-      ) {
-        result.push(hotel);
-      }
-    });
-  });
+  // // find hotels that have enough capacity
+  // const result = [];
+  // hotelList.forEach((hotel) => {
+  //   hotelsCurrentCapacity.forEach((hotelCap) => {
+  //     if (
+  //       hotelCap.capacity >= peopleQuantity &&
+  //       hotelCap.hotelId.toString() === hotel._id.toString()
+  //     ) {
+  //       result.push(hotel);
+  //     }
+  //   });
+  // });
 
-  return result;
+  // return result;
 };
 
 exports.searchHotels = async (request, response, next) => {
-  const requestData = request.body;
-  const requireRoom = requestData.options;
-  const date = requestData.date;
+  const hardData = await Hotel.find();
+
+  const requireRoom = request.body.options;
+  const location = request.body.destination;
+  const date = request.body.date;
+  // console.log("request.body:", request.body);
   // console.log("===================================");
   // console.log("requestData.date:", requestData.date);
-
-  // delete all whitespace in string
-  const location = requestData.destination.replace(/ /g, "").trim();
 
   const hotelsByLocation = await searchHotelByLocation(location);
   // console.log("hotelsByLocation:", hotelsByLocation);
@@ -469,14 +420,13 @@ exports.searchHotels = async (request, response, next) => {
 
     const checkedOutRooms = await findCheckedOutRooms(date, hotelsByLocation);
 
-    const otherEmptyRooms = await findOtherEmptyRooms(
-      checkedOutRooms,
-      hotelsByLocation
-    );
+    const otherEmptyRooms = await findOtherEmptyRooms();
 
-    const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
+    // console.log("===================");
     // console.log("checkedOutRooms.length:", checkedOutRooms.length);
     // console.log("otherEmptyRooms.length:", otherEmptyRooms.length);
+
+    const allEmptyRooms = checkedOutRooms.concat(otherEmptyRooms);
 
     const validHotels = await findHotelsWithEnoughRooms(
       requireRoom,
@@ -484,7 +434,7 @@ exports.searchHotels = async (request, response, next) => {
     );
 
     // console.log("validHotels.length:", validHotels.length);
-    response.send(validHotels);
+    response.send(hardData);
   } else {
     response.statusMessage = "not found hotels";
     response.status(404).end();
