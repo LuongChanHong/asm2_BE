@@ -1,5 +1,5 @@
 Nội dung app:
-- hoàn thành chức năng tìm khách sạn theo yêu cầu
+- hoàn thành trang transaction dashboard
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

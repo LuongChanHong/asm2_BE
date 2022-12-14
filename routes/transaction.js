@@ -3,6 +3,9 @@ const router = express.Router();
 
 const tranController = require("../controllers/transaction");
 
-router.post("/create-transaction", tranController.createTransaction);
+router.post(
+  "/get-transaction-by-user-id",
+  tranController.getTransactionByUserId
+);
 
 exports.route = router;
