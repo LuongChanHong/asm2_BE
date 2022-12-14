@@ -102,7 +102,14 @@ const formatRoomList = async (roomIdList) => {
     });
   });
   result = result.map((item) => {
-    return { _id: item._id, roomNumber: item.roomNumber.number };
+    return {
+      _id: new Mongoose.Types.ObjectId(),
+      roomId: item._id,
+      roomNumber: {
+        _id: new Mongoose.Types.ObjectId(),
+        number: item.roomNumber.number,
+      },
+    };
   });
   // console.log("result:", result);
   return result;
@@ -121,6 +128,8 @@ exports.reserve = async (request, response) => {
     identity: user.identity,
   });
 
+  console.log("bookedRooms:", bookedRooms);
+
   const newTran = new Transaction({
     user: user,
     hotel: new Mongoose.Types.ObjectId(hotel),
@@ -133,6 +142,7 @@ exports.reserve = async (request, response) => {
   });
   // console.log("=================");
   // console.log("newTran:", newTran);
-  // newTran.save();
+  newTran.save();
+  console.log("Room controller::User reverve success");
   response.end();
 };
