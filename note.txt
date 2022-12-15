@@ -1,5 +1,5 @@
 Nội dung app:
-- hoàn thành trang transaction dashboard
+- chỉnh sửa thanh nhập yêu cầu người dùng tương thích với các trang khác nhau
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev
