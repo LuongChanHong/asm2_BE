@@ -1,5 +1,5 @@
 Nội dung app:
-- chỉnh sửa thanh nhập yêu cầu người dùng tương thích với các trang khác nhau
+- update transaction model và resever method
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

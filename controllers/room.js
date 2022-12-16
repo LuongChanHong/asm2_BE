@@ -2,6 +2,7 @@ const Mongoose = require("mongoose");
 const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const Room = require("../models/Room");
+const Hotel = require("../models/Hotel");
 
 const checkCheckinOrBooked = (startDate) => {
   const today = new Date();
@@ -120,6 +121,7 @@ exports.reserve = async (request, response) => {
   //   console.log("request.body:", request.body)
   updateRoomNumbersDate(rooms, dates);
   const bookedRooms = await formatRoomList(rooms);
+  const hotelName = await Hotel.findById(hotel).select("name");
 
   await User.findByIdAndUpdate(user._id, {
     username: user.username,
@@ -128,11 +130,12 @@ exports.reserve = async (request, response) => {
     identity: user.identity,
   });
 
-  console.log("bookedRooms:", bookedRooms);
+  // console.log("bookedRooms:", bookedRooms);
 
   const newTran = new Transaction({
     user: user,
     hotel: new Mongoose.Types.ObjectId(hotel),
+    hotelName: hotelName.name,
     rooms: bookedRooms,
     dateStart: dates[0],
     dateEnd: dates[dates.length - 1],
@@ -143,6 +146,6 @@ exports.reserve = async (request, response) => {
   // console.log("=================");
   // console.log("newTran:", newTran);
   newTran.save();
-  console.log("Room controller::User reverve success");
+  // console.log("Room controller::User reverve success");
   response.end();
 };
