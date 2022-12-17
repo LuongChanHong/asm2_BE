@@ -1,5 +1,5 @@
 Nội dung app:
-- update xử lí lỗi đăng nhập
+- xử lí lỗi khi đăng nhập cho trang admin
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev
