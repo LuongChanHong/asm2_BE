@@ -2,7 +2,7 @@ const Mongoose = require("mongoose");
 const Hotel = require("../models/Hotel");
 const Transaction = require("../models/Transaction");
 const Room = require("../models/Room");
-const { request } = require("express");
+const User = require("../models/User");
 
 // compare 2 date to know is later, earlier or same time
 const compareDate = (dateA, dateB) => {
@@ -455,4 +455,63 @@ exports.getRoomOfHotel = async (request, response, next) => {
     response.statusMessage = "no rooms found";
     response.status(404).end();
   }
+};
+
+const calEarning = async () => {
+  try {
+    const priceList = await Transaction.find().select("price");
+    const earning = priceList.reduce((total, currentValue) => ({
+      price: total.price + currentValue.price,
+    }));
+    return earning.price;
+  } catch (error) {
+    console.log("error:", error);
+  }
+};
+
+// tổng doanh thu từng tháng
+// số các tháng hiện nay có trong tran
+// lấy các statDate từ tran list
+// nếu date đó thuộc tháng nào thì tăng item tháng đó lên
+// đếm các tháng khác 0
+// chia tổng thu truyền từ ngoài vào cho số các tháng khác 0
+// ra đáp án
+
+const calBalance = async (totalPrice) => {
+  const months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  try {
+    const statDateList = await Transaction.find().select("dateStart -_id");
+    // group each transaction statDate by month
+    months.forEach((month, i) => {
+      statDateList.forEach((date) => {
+        if (date.dateStart.getMonth() + 1 === i + 1) {
+          months[i]++;
+        }
+      });
+    });
+    // count total month have transaction
+    const count = [...months].reduce(
+      (total, x) => (x != 0 ? total + 1 : total),
+      0
+    );
+    return totalPrice / count;
+    // có cách gọn (nhẹ) hơn nữa là cho list months toàn false
+    // tháng nào có transaction thì đổi thành true
+    // đếm tháng nào trong list months là true
+  } catch (error) {
+    console.log("error:", error);
+  }
+};
+
+exports.getBusinessInfo = async (request, response) => {
+  const earning = await calEarning();
+  const balance = await calBalance(earning);
+  const result = {
+    users: await User.count(),
+    orders: await Transaction.count(),
+    earning: earning,
+    balance: balance,
+  };
+
+  response.send(result);
 };

@@ -1,5 +1,5 @@
 Nội dung app:
-- update transaction model và resever method
+- update xử lí lỗi đăng nhập
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

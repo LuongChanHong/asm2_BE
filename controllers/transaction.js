@@ -21,3 +21,20 @@ exports.getTransactionByUserId = async (request, response) => {
     console.log("err:", err);
   }
 };
+
+exports.getLastestTransaction = async (request, response) => {
+  try {
+    const lastestList = await Transaction.find()
+      .sort({ $natural: -1 })
+      .limit(8);
+    if (lastestList.length > 0) {
+      // console.log("lastestList:", lastestList);
+      response.send(lastestList);
+    } else {
+      response.statusMessage = "No Transaction Found";
+      response.status(404).end();
+    }
+  } catch (err) {
+    console.log("err:", err);
+  }
+};

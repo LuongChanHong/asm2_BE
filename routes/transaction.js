@@ -8,4 +8,6 @@ router.post(
   tranController.getTransactionByUserId
 );
 
+router.get("/get-lastest-transaction", tranController.getLastestTransaction);
+
 exports.route = router;
