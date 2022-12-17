@@ -15,7 +15,7 @@ exports.login = async (request, response, next) => {
     });
 
     if (foundUser === null) {
-      response.statusMessage = "user not exist";
+      response.statusMessage = "Email or Password wrong";
       response.status(404).end();
     } else {
       response.send(foundUser);
