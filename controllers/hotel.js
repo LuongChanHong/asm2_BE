@@ -515,3 +515,12 @@ exports.getBusinessInfo = async (request, response) => {
 
   response.send(result);
 };
+
+exports.getAllHotel = async (request, response) => {
+  try {
+    const hotels = await Hotel.find().select("name type title city");
+    response.send(hotels);
+  } catch (error) {
+    console.log("error:", error);
+  }
+};

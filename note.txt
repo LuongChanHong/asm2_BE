@@ -1,5 +1,5 @@
 Nội dung app:
-- xử lí lỗi khi đăng nhập cho trang admin
+- thêm trang tạo hotel mới trang admin
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

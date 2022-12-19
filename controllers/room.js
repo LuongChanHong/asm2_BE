@@ -149,3 +149,12 @@ exports.reserve = async (request, response) => {
   // console.log("Room controller::User reverve success");
   response.end();
 };
+
+exports.getAllRoom = async (request, response) => {
+  try {
+    const rooms = await Room.find().select("title price maxPeople");
+    response.send(rooms);
+  } catch (error) {
+    console.log("error:", error);
+  }
+};
