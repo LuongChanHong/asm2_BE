@@ -469,14 +469,6 @@ const calEarning = async () => {
   }
 };
 
-// tổng doanh thu từng tháng
-// số các tháng hiện nay có trong tran
-// lấy các statDate từ tran list
-// nếu date đó thuộc tháng nào thì tăng item tháng đó lên
-// đếm các tháng khác 0
-// chia tổng thu truyền từ ngoài vào cho số các tháng khác 0
-// ra đáp án
-
 const calBalance = async (totalPrice) => {
   const months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   try {
@@ -523,4 +515,30 @@ exports.getAllHotel = async (request, response) => {
   } catch (error) {
     console.log("error:", error);
   }
+};
+
+exports.addNewHotel = async (request, response) => {
+  const data = request.body;
+  // console.log("data:", data);
+
+  const newHotel = new Hotel({
+    address: data.address,
+    cheapestPrice: data.price,
+    city: data.city,
+    desc: data.destination, // x
+    distance: data.distance,
+    featured: data.featured,
+    name: data.name,
+    photos: [data.image],
+    rooms: data.room,
+    title: data.title,
+    type: data.type,
+    rating: 5,
+    rateText: "good",
+  });
+
+  console.log("newHotel:", newHotel);
+
+  newHotel.save();
+  response.end();
 };

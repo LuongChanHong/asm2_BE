@@ -53,6 +53,18 @@ const hotelSchema = new Schema({
     type: Array,
     require: true,
   },
+  cheapestPrice: {
+    type: Number,
+    require: true,
+  },
+  title: {
+    type: String,
+    require: true,
+  },
+  rateText: {
+    type: String,
+    require: true,
+  },
 });
 
 module.exports = mongoose.model("Hotel", hotelSchema);
