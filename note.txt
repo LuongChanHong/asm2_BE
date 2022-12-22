@@ -1,5 +1,5 @@
 Nội dung app:
-- hoàn thành tính năng validation form tạo hotel trang admin
+- hoàn thành tính năng xóa hotel trang admin
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

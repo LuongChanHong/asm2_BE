@@ -519,13 +519,13 @@ exports.getAllHotel = async (req, res) => {
 
 exports.addNewHotel = async (req, res) => {
   const data = req.body;
-  console.log("data:", data);
+  // console.log("data:", data);
 
   const newHotel = new Hotel({
     address: data.address,
     cheapestPrice: data.price,
     city: data.city,
-    desc: data.destination, // x
+    desc: data.description,
     distance: data.distance,
     featured: data.featured,
     name: data.name,
@@ -539,7 +539,7 @@ exports.addNewHotel = async (req, res) => {
 
   // console.log("newHotel:", newHotel);
 
-  // newHotel.save();
+  newHotel.save();
   res.status(200).end();
 };
 
@@ -551,5 +551,22 @@ exports.addNewHotel = async (req, res) => {
 
 exports.deleteHotel = async (req, res) => {
   const hotelId = req.body.id;
-  console.log("hotelId:", hotelId);
+  // console.log("hotelId:", hotelId);
+  const foundTran = await Transaction.find({ hotel: hotelId }).select("status");
+  if (foundTran.length === 0) {
+    await Hotel.findByIdAndDelete(hotelId);
+    res.end();
+  } else {
+    res.status(200).send("The hotel is booked by guests, can't delete");
+  }
+  // const bookedTrans = foundTran.find(
+  //   (tran) => tran.status === "Booked" || tran.status === "Checkin"
+  // );
+  // console.log("bookedTrans:", bookedTrans);
+  // if (!bookedTrans) {
+  //   await Hotel.findByIdAndDelete(hotelId);
+  //   res.end();
+  // } else {
+  //   res.status(200).send("The hotel is booked by guests, can't delete");
+  // }
 };
