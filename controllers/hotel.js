@@ -166,21 +166,21 @@ const filterHotelByRating = (hotels) => {
   return result;
 };
 
-exports.getHotelsbyArea = (request, response, next) => {
+exports.getHotelsbyArea = (req, res, next) => {
   Hotel.find()
     .then((hotels) => {
       if (hotels.length > 0) {
         const hotelByCity = filterHotelByCity(hotels);
         const propertyByType = filterPropertyByType(hotels);
         const hotelByRating = filterHotelByRating(hotels);
-        response.send({
+        res.send({
           hotelByCity: hotelByCity,
           propertyByType: propertyByType,
           hotelByRating: hotelByRating,
         });
       } else {
-        response.statusMessage = "No hotels found";
-        response.status(404).end();
+        res.statusMessage = "No hotels found";
+        res.status(404).end();
       }
     })
     .catch((err) => console.log("::ERROR:", err));
@@ -354,7 +354,7 @@ const findOtherEmptyRooms = async () => {
   return _roomList;
 };
 
-// find hotels have enough room for user booking request
+// find hotels have enough room for user booking req
 const findHotelsWithEnoughRooms = async (require, emptyRoomList) => {
   let hotelList = await Hotel.find({ city: require.destination }).select(
     "_id city"
@@ -387,10 +387,10 @@ const findHotelsWithEnoughRooms = async (require, emptyRoomList) => {
   return hotelList;
 };
 
-exports.searchHotels = async (request, response, next) => {
+exports.searchHotels = async (req, res, next) => {
   const hardData = await Hotel.find();
 
-  const requireData = request.body;
+  const requireData = req.body;
 
   const hotelsByLocation = await searchHotelByLocation(requireData.destination);
   // console.log("hotelsByLocation:", hotelsByLocation);
@@ -417,30 +417,30 @@ exports.searchHotels = async (request, response, next) => {
     );
 
     // console.log("validHotels.length:", validHotels.length);
-    response.send(validHotels);
+    res.send(validHotels);
   } else {
-    response.statusMessage = "not found hotels";
-    response.status(404).end();
+    res.statusMessage = "not found hotels";
+    res.status(404).end();
   }
 };
 
-exports.getHotelById = (request, response, next) => {
-  const id = request.params.id;
+exports.getHotelById = (req, res, next) => {
+  const id = req.params.id;
   Hotel.findById(new Mongoose.Types.ObjectId(id))
     .then((hotel) => {
       if (hotel) {
-        response.send(hotel);
+        res.send(hotel);
       } else {
-        response.statusMessage = "not found hotel";
-        response.status(404).end();
+        res.statusMessage = "not found hotel";
+        res.status(404).end();
       }
     })
     .catch((err) => console.log("::ERROR:", err));
 };
 
-exports.getRoomOfHotel = async (request, response, next) => {
-  const hotelId = request.params.id;
-  // console.log("request.params:", request.params);
+exports.getRoomOfHotel = async (req, res, next) => {
+  const hotelId = req.params.id;
+  // console.log("req.params:", req.params);
   const hotel = await Hotel.findById(hotelId);
   const rooms = await Promise.all(
     hotel.rooms.map((room) => {
@@ -450,10 +450,10 @@ exports.getRoomOfHotel = async (request, response, next) => {
   );
 
   if (rooms.length > 0) {
-    response.send(rooms);
+    res.send(rooms);
   } else {
-    response.statusMessage = "no rooms found";
-    response.status(404).end();
+    res.statusMessage = "no rooms found";
+    res.status(404).end();
   }
 };
 
@@ -495,7 +495,7 @@ const calBalance = async (totalPrice) => {
   }
 };
 
-exports.getBusinessInfo = async (request, response) => {
+exports.getBusinessInfo = async (req, res) => {
   const earning = await calEarning();
   const balance = await calBalance(earning);
   const result = {
@@ -505,21 +505,21 @@ exports.getBusinessInfo = async (request, response) => {
     balance: balance,
   };
 
-  response.send(result);
+  res.send(result);
 };
 
-exports.getAllHotel = async (request, response) => {
+exports.getAllHotel = async (req, res) => {
   try {
     const hotels = await Hotel.find().select("name type title city");
-    response.send(hotels);
+    res.send(hotels);
   } catch (error) {
     console.log("error:", error);
   }
 };
 
-exports.addNewHotel = async (request, response) => {
-  const data = request.body;
-  // console.log("data:", data);
+exports.addNewHotel = async (req, res) => {
+  const data = req.body;
+  console.log("data:", data);
 
   const newHotel = new Hotel({
     address: data.address,
@@ -537,8 +537,19 @@ exports.addNewHotel = async (request, response) => {
     rateText: "good",
   });
 
-  console.log("newHotel:", newHotel);
+  // console.log("newHotel:", newHotel);
 
-  newHotel.save();
-  response.end();
+  // newHotel.save();
+  res.status(200).end();
+};
+
+/**
+ * tran
+ *
+ * room
+ */
+
+exports.deleteHotel = async (req, res) => {
+  const hotelId = req.body.id;
+  console.log("hotelId:", hotelId);
 };
