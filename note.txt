@@ -1,5 +1,5 @@
 Nội dung app:
-- thêm trang danh sách các phòng trang admin
+- thêm trang tạo phòng mới trang admin và validation trang admin
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

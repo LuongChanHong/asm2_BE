@@ -543,12 +543,6 @@ exports.addNewHotel = async (req, res) => {
   res.status(200).end();
 };
 
-/**
- * tran
- *
- * room
- */
-
 exports.deleteHotel = async (req, res) => {
   const hotelId = req.body.id;
   // console.log("hotelId:", hotelId);
@@ -559,14 +553,4 @@ exports.deleteHotel = async (req, res) => {
   } else {
     res.status(200).send("The hotel is booked by guests, can't delete");
   }
-  // const bookedTrans = foundTran.find(
-  //   (tran) => tran.status === "Booked" || tran.status === "Checkin"
-  // );
-  // console.log("bookedTrans:", bookedTrans);
-  // if (!bookedTrans) {
-  //   await Hotel.findByIdAndDelete(hotelId);
-  //   res.end();
-  // } else {
-  //   res.status(200).send("The hotel is booked by guests, can't delete");
-  // }
 };
