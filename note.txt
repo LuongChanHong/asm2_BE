@@ -1,5 +1,5 @@
 Nội dung app:
-- hoàn thành tính năng xóa hotel trang admin
+- thêm trang danh sách các phòng trang admin
 
 Set up server app: 
 - Cài nodemon: npm i express --save-dev

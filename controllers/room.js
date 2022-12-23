@@ -152,7 +152,7 @@ exports.reserve = async (request, response) => {
 
 exports.getAllRoom = async (request, response) => {
   try {
-    const rooms = await Room.find().select("title price maxPeople");
+    const rooms = await Room.find().select("title price maxPeople desc");
     response.send(rooms);
   } catch (error) {
     console.log("error:", error);
