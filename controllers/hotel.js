@@ -537,7 +537,7 @@ exports.addNewHotel = async (req, res) => {
     rateText: "good",
   });
 
-  // console.log("newHotel:", newHotel);
+  console.log("newHotel:", newHotel);
 
   newHotel.save();
   res.status(200).end();
