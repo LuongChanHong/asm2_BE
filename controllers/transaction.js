@@ -38,3 +38,14 @@ exports.getLastestTransaction = async (req, res) => {
     console.log("err:", err);
   }
 };
+
+exports.getAllTransaction = async (req, res) => {
+  const reqData = req.body;
+  console.log("reqData:", reqData);
+  try {
+    const tranList = await Transaction.find();
+    res.send(tranList);
+  } catch (error) {
+    console.log("error:", error);
+  }
+};

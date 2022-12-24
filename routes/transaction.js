@@ -9,5 +9,6 @@ router.post(
 );
 
 router.get("/get-lastest-transaction", tranController.getLastestTransaction);
+router.get("/get-all-transaction", tranController.getAllTransaction);
 
 exports.route = router;
