@@ -154,15 +154,6 @@ exports.getAllRoom = async (req, res) => {
   }
 };
 
-/**
-number
-101
-
-unAvailableDates
-Array
-_id
-63857ff56145fcda98869570 */
-
 exports.addNewRoom = async (req, res) => {
   const reqData = req.body;
   console.log("value:", reqData);
@@ -192,4 +183,34 @@ exports.addNewRoom = async (req, res) => {
   });
 
   res.end();
+};
+// const foundTran = await Transaction.find({
+//   rooms: { roomId: new Mongoose.Types.ObjectId(reqData.id) },
+// });
+// console.log("foundTran:", foundTran);
+
+exports.deleteRoom = async (req, res) => {
+  const reqData = req.body;
+  // console.log("reqData.id:", reqData.id);
+
+  // const tranList = await Transaction.find({
+  //   $or: [{ status: "Booked" }, { status: "Checkin" }],
+  // }).select("rooms");
+  const tranList = await Transaction.find().select("rooms");
+  let roomIdList = [];
+  tranList.forEach((tran) => {
+    tran.rooms.forEach((item) => {
+      roomIdList.push({ _id: tran._id, roomId: item.roomId });
+    });
+  });
+
+  const foundRoomId = roomIdList.find(
+    (item) => item.roomId.toString() === reqData.id
+  );
+  if (foundRoomId) {
+    res.status(200).send("This room is booked by guests, can't delete");
+  } else {
+    await Room.findByIdAndDelete(reqData.id);
+    res.end();
+  }
 };
