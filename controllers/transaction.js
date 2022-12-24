@@ -3,8 +3,8 @@ const User = require("../models/User");
 const Hotel = require("../models/Hotel");
 const Transaction = require("../models/Transaction");
 
-exports.getTransactionByUserId = async (request, response) => {
-  const userId = request.body.userId;
+exports.getTransactionByUserId = async (req, res) => {
+  const userId = req.body.userId;
   //   console.log("userId:", userId);
   try {
     const transactions = await Transaction.find({ "user._id": userId }).select(
@@ -12,27 +12,27 @@ exports.getTransactionByUserId = async (request, response) => {
     );
 
     if (transactions.length > 0) {
-      response.send(transactions);
+      res.send(transactions);
     } else {
-      response.statusMessage = "No transaction found";
-      response.status(404).end();
+      res.statusMessage = "No transaction found";
+      res.status(404).end();
     }
   } catch (err) {
     console.log("err:", err);
   }
 };
 
-exports.getLastestTransaction = async (request, response) => {
+exports.getLastestTransaction = async (req, res) => {
   try {
     const lastestList = await Transaction.find()
       .sort({ $natural: -1 })
       .limit(8);
     if (lastestList.length > 0) {
       // console.log("lastestList:", lastestList);
-      response.send(lastestList);
+      res.send(lastestList);
     } else {
-      response.statusMessage = "No Transaction Found";
-      response.status(404).end();
+      res.statusMessage = "No Transaction Found";
+      res.status(404).end();
     }
   } catch (err) {
     console.log("err:", err);

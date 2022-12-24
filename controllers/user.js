@@ -3,22 +3,22 @@ const User = require("../models/User");
 // total phone number character
 const phoneNumberChar = 10;
 
-exports.login = async (request, response, next) => {
-  const requestData = request.body;
+exports.login = async (req, res, next) => {
+  const reqData = req.body;
   try {
-    // console.log("requestData:", requestData);
+    // console.log("reqData:", reqData);
     const foundUser = await User.findOne({
       $and: [
-        { email: requestData.data.email },
-        { password: requestData.data.password },
+        { email: reqData.data.email },
+        { password: reqData.data.password },
       ],
     });
 
     if (foundUser === null) {
-      response.statusMessage = "Email or Password wrong";
-      response.status(404).end();
+      res.statusMessage = "Email or Password wrong";
+      res.status(404).end();
     } else {
-      response.send(foundUser);
+      res.send(foundUser);
     }
   } catch (err) {
     console.log("err:", err);
@@ -50,44 +50,44 @@ const createIdentityNumber = () => {
   return identity;
 };
 
-exports.signup = async (request, response, next) => {
-  const requestData = request.body.data;
-  console.log("requestData:", requestData);
-  // const name = requestData.email.split("@")[0];
+exports.signup = async (req, res, next) => {
+  const reqData = req.body.data;
+  console.log("reqData:", reqData);
+  // const name = reqData.email.split("@")[0];
 
   const newUser = new User({
     username: "",
-    password: requestData.password,
+    password: reqData.password,
     fullName: "",
     phoneNumber: "",
-    email: requestData.email,
+    email: reqData.email,
     isAdmin: false,
     identity: "",
   });
 
   try {
-    // console.log("requestData:", requestData);
+    // console.log("reqData:", reqData);
     const foundUser = await User.findOne({
-      $and: [{ email: requestData.email }, { password: requestData.password }],
+      $and: [{ email: reqData.email }, { password: reqData.password }],
     });
     if (foundUser === null) {
       newUser.save();
-      response.end();
+      res.end();
     } else {
-      response.statusMessage = "user exist";
-      response.status(404).end();
+      res.statusMessage = "user exist";
+      res.status(404).end();
     }
   } catch (err) {
     console.log("err:", err);
   }
 };
 
-exports.findUserByEmail = async (request, response, next) => {
-  const email = request.body.data;
+exports.findUserByEmail = async (req, res, next) => {
+  const email = req.body.data;
   console.log("email:", email);
   try {
     const user = await User.findOne({ email: email });
-    response.send(user);
+    res.send(user);
   } catch (err) {
     console.log("err:", err);
   }

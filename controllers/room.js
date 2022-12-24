@@ -38,11 +38,6 @@ const checkCheckinOrBooked = (startDate) => {
   }
 };
 
-/**rooms
- * {_id: 6311c083f2fce6ea18172fba
-    roomNumber: 101}
- */
-
 // update each room`s roomNumbers`s unAvailableDates
 const updateRoomNumbersDate = (roomNumbersIdList, dates) => {
   roomNumbersIdList.forEach(async (id) => {
@@ -116,9 +111,9 @@ const formatRoomList = async (roomIdList) => {
   return result;
 };
 
-exports.reserve = async (request, response) => {
-  const { user, hotel, rooms, dates, price, payment } = request.body;
-  //   console.log("request.body:", request.body)
+exports.reserve = async (req, res) => {
+  const { user, hotel, rooms, dates, price, payment } = req.body;
+  //   console.log("req.body:", req.body)
   updateRoomNumbersDate(rooms, dates);
   const bookedRooms = await formatRoomList(rooms);
   const hotelName = await Hotel.findById(hotel).select("name");
@@ -147,14 +142,54 @@ exports.reserve = async (request, response) => {
   // console.log("newTran:", newTran);
   newTran.save();
   // console.log("Room controller::User reverve success");
-  response.end();
+  res.end();
 };
 
-exports.getAllRoom = async (request, response) => {
+exports.getAllRoom = async (req, res) => {
   try {
     const rooms = await Room.find().select("title price maxPeople desc");
-    response.send(rooms);
+    res.send(rooms);
   } catch (error) {
     console.log("error:", error);
   }
+};
+
+/**
+number
+101
+
+unAvailableDates
+Array
+_id
+63857ff56145fcda98869570 */
+
+exports.addNewRoom = async (req, res) => {
+  const reqData = req.body;
+  console.log("value:", reqData);
+  const roomNumbers = reqData.rooms.map((item) => {
+    return {
+      number: item,
+      unAvailableDates: [],
+      _id: new Mongoose.Types.ObjectId(),
+    };
+  });
+  let id = new Mongoose.Types.ObjectId();
+  id = id.toString();
+
+  const newRoom = new Room({
+    _id: id,
+    desc: reqData.description,
+    maxPeople: reqData.maxPeople,
+    price: reqData.price,
+    roomNumbers: roomNumbers,
+    title: reqData.title,
+  });
+
+  newRoom.save();
+
+  await Hotel.findByIdAndUpdate(reqData.hotel, {
+    $push: { rooms: id },
+  });
+
+  res.end();
 };
